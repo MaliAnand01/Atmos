@@ -62,6 +62,12 @@ public class EventService {
         return eventRepository.findByOrganizerId(organizerId);
     }
 
+    public List<Event> getEventsByVenue(Long venueId) {
+        if (venueId == null)
+            return List.of();
+        return eventRepository.findByVenueId(venueId);
+    }
+
     // The core logic for the React Vibe Slider — ±2 range gives richer results
     public List<Event> getEventsByVibe(int vibeLevel) {
         return eventRepository.findByEnergyLevelBetween(

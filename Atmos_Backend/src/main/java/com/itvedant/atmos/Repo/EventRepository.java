@@ -27,6 +27,9 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     // Category filter (null = all)
     List<Event> findByCategoryIgnoreCase(String category);
 
+    // Venue filter
+    List<Event> findByVenueId(Long venueId);
+
     // Paginated event listing
     @Override
     @NonNull

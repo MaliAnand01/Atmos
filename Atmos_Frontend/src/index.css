@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --color-void: #0D0F14;
+  --color-clay-surface: #1A1D24;
+  --color-chill-blue: #00F0FF;
+  --color-chill-indigo: #6366F1;
+  --color-energy-pink: #FF007F;
+  --color-energy-orange: #FF5E00;
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Inter", "Plus Jakarta Sans", sans-serif;
+}
+
+@layer utilities {
+  .shadow-clay {
+    box-shadow: inset 4px 4px 8px rgba(255,255,255,0.05), inset -4px -4px 8px rgba(0,0,0,0.4), 8px 8px 16px rgba(0,0,0,0.3);
+  }
+}
+
+body {
+  @apply bg-void text-text-primary font-body antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-display font-bold;
+}

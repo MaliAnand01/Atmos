@@ -17,7 +17,6 @@ export default function HorizontalScrollFeed({ events = [] }) {
     const scrollContainer = scrollContainerRef.current;
     if (!section || !scrollContainer || !events || events.length === 0) return;
 
-    // Refresh ScrollTrigger to ensure accurate measurements
     ScrollTrigger.refresh();
 
     const scrollWidth = scrollContainer.scrollWidth - window.innerWidth;
@@ -33,14 +32,12 @@ export default function HorizontalScrollFeed({ events = [] }) {
       }
     });
 
-    // Move first
     tl.to(scrollContainer, {
       x: -scrollWidth,
       ease: "none",
       duration: 1
     });
 
-    // Then wait
     tl.to({}, { duration: 0.8 }); 
 
     return () => {
@@ -51,7 +48,7 @@ export default function HorizontalScrollFeed({ events = [] }) {
 
   return (
     <div ref={sectionRef} className="min-h-screen w-full relative flex flex-col bg-void z-10 overflow-hidden py-24">
-      {/* Proper Section Heading - Consistent with VenuesGrid */}
+      {/* Featured Events */}
       <div className="w-full max-w-7xl mx-auto px-6 mb-12 relative z-20">
         <h2 className="text-4xl md:text-5xl font-display font-bold text-text-primary uppercase tracking-tight">
           Trending Orbits
@@ -106,7 +103,6 @@ export default function HorizontalScrollFeed({ events = [] }) {
                 </Link>
               </div>
             ))}
-            {/* Added Spacer so last card is fully visible with space at the end */}
             <div className="w-[10vw] md:w-[20vw] flex-shrink-0 h-1" />
           </>
         ) : (

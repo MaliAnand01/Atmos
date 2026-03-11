@@ -18,13 +18,13 @@ public class UserController {
         this.userService = userService;
     }
 
-    /** Admin only: list all users */
+    /** Admin: list all users */
     @GetMapping
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    /** Own profile or admin can view */
+    /** Get user profile */
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)
@@ -32,7 +32,7 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /** Own profile update */
+    /** Update user profile */
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(
             @PathVariable Long id,
@@ -45,7 +45,7 @@ public class UserController {
         }
     }
 
-    /** Admin only: delete a user */
+    /** Delete user */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);

@@ -9,7 +9,6 @@ import { saveAuth } from "../services/authStore";
 export default function AuthModal({ isOpen, onClose, onSuccess }) {
   const [mode, setMode] = useState("login"); // 'login' or 'register'
   
-  // Auth Form State
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +21,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
 
   if (!isOpen) return null;
 
-  // Real API Auth Action
+  /** Authenticate user */
   const handleAuthAction = async () => {
     setError("");
     setLoading(true);
@@ -40,9 +39,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
         });
       }
 
-      // Success logic
-      // Create Basic Auth token -> username:password (or email:password depending on backend expectation)
-      // Our backend uses findByEmail for login, so let's use email:password for the token
       const token = btoa(`${userData.email}:${password}`);
       localStorage.setItem("atmos_token", token);
       saveAuth(userData);

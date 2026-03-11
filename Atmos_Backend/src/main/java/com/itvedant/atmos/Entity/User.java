@@ -10,7 +10,7 @@ import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "users")
-@Data // Lombok generates getters, setters, toString
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {

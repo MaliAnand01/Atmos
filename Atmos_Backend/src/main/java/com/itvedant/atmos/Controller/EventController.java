@@ -22,26 +22,25 @@ public class EventController {
         this.eventService = eventService;
     }
 
-    /** GET /api/events?page=0&size=10 — supports optional pagination, defaults to all */
+    /** Get all events (paginated) */
     @GetMapping
     public ResponseEntity<?> getAllEvents(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false, defaultValue = "10") Integer size) {
         if (page != null) {
-            // Return paginated response
             return ResponseEntity.ok(eventService.getAllEventsPaged(
                     PageRequest.of(page, size, Sort.by("dateTime").ascending())));
         }
         return ResponseEntity.ok(eventService.getAllEvents());
     }
 
-    /** GET /api/events/search?q=techno — server-side search by title or venue */
+    /** Search events by title or venue */
     @GetMapping("/search")
     public List<Event> searchEvents(@RequestParam(name = "q", defaultValue = "") String query) {
         return eventService.searchEvents(query);
     }
 
-    /** GET /api/events/category?name=Techno — filter by category */
+    /** List events by category */
     @GetMapping("/category")
     public List<Event> getByCategory(@RequestParam(name = "name", defaultValue = "All") String category) {
         return eventService.getEventsByCategory(category);
@@ -54,7 +53,6 @@ public class EventController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // React will call: /api/events/vibe?level=8
     @GetMapping("/vibe")
     public List<Event> getEventsByVibe(@RequestParam int level) {
         return eventService.getEventsByVibe(level);

@@ -1,13 +1,8 @@
-// authStore.js - Simplified localStorage-based auth state manager
+// LocalStorage Auth State Manager
 
-/**
- * Stores the user object and base64 credentials in localStorage.
- * user: { id, username, email, role }
- * credentials: base64(username:password) or just a mock token
- */
+/** Save user session */
 export const saveAuth = (user) => {
   localStorage.setItem('atmos_user', JSON.stringify(user));
-  // We already store atmos_token in AuthModal during login for Basic auth header
 };
 
 export const getUser = () => {

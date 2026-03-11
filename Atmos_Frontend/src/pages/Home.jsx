@@ -14,7 +14,6 @@ export default function Home() {
   const [siteStats, setSiteStats] = useState({ events: 0, venues: 0, bookings: 0 });
 
   const fetchEventsByVibe = useCallback(async (level) => {
-    // ... code ...
     try {
       setLoading(true);
       const data = await api.get(`/events/vibe?level=${level}`);
@@ -62,7 +61,7 @@ export default function Home() {
       transition={{ duration: 0.5 }}
       className="bg-void min-h-screen font-body text-text-primary overflow-x-hidden" 
     >
-      {/* ═══ HERO SECTION ═══ */}
+      {/* Hero Section */}
       <section className="relative w-full min-h-[90vh] flex flex-col justify-center overflow-hidden z-20 pt-24 pb-16">
         
         {/* Animated ambient background */}
@@ -78,7 +77,7 @@ export default function Home() {
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           
-          {/* ── Left: Text + Slider ── */}
+          {/* Text and Vibe Slider */}
           <div className="flex flex-col gap-8">
             {/* Live tag */}
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
@@ -137,7 +136,7 @@ export default function Home() {
             </motion.div>
           </div>
 
-          {/* ── Right: Live Event Preview ── */}
+          {/* Live Event Preview */}
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}

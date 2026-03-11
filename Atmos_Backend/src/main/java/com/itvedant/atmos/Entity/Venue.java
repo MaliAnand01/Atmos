@@ -30,8 +30,7 @@ public class Venue {
     @Column(name = "image_url")
     private String imageUrl;
 
-    // One Venue can have many Events
-    // JsonIgnore prevents infinite loops when sending JSON back to React
+    /** Venue events (JSON ignored to prevent recursion) */
     @OneToMany(mappedBy = "venue", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Event> events;

@@ -18,7 +18,6 @@ export default function Tickets() {
       if (!user) { setLoading(false); return; }
       try {
         const data = await api.get(`/bookings/user/${user.id}`, true);
-        // Only show active bookings
         setBookings(data.filter(b => b.status === "ACTIVE"));
       } catch (error) {
         console.error("Failed to load tickets:", error);
@@ -70,7 +69,7 @@ export default function Tickets() {
                   <ClayCard className="flex flex-col md:flex-row gap-6 p-6 md:p-8 relative overflow-hidden group border border-white/5">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-energy-pink/10 rounded-bl-full -z-10 group-hover:scale-110 transition-transform" />
                     
-                    {/* QR Code using real booking ID */}
+                    {/* QR Code */}
                     <div className="bg-white p-2 rounded-xl shrink-0 self-start md:self-center">
                       <img src={qrUrl} alt="QR Code" className="w-24 h-24 md:w-32 md:h-32 rounded-lg" />
                     </div>

@@ -12,7 +12,6 @@ export default function Dashboard() {
     const [activeTab, setActiveTab] = useState("overview");
     const user = getUser();
 
-    // Mapping API roles to dashboard keys
     const viewKey = role === "ROLE_ADMIN" ? "admin" : 
                    role === "ROLE_ORGANIZER" ? "organizer" : "attendee";
 

@@ -26,7 +26,7 @@ public class DataLoader {
         return args -> {
             System.out.println("Seeding Atmos Database...");
 
-            // 1. Seed Users (Admin, User, Organizer)
+            // Seed Users
             if (userRepository.count() == 0) {
                 User admin = new User();
                 admin.setUsername("Anand Mali");
@@ -46,11 +46,10 @@ public class DataLoader {
                 organizer.setPassword(passwordEncoder.encode("org123"));
                 organizer.setRole("ROLE_ORGANIZER");
 
-                // Wrapping in Objects.requireNonNull satisfies strict @NonNull Iterable checks
                 userRepository.saveAll(Objects.requireNonNull(List.of(admin, testUser, organizer)));
             }
 
-            // 2. Seed Venues
+            // Seed Venues
             if (venueRepository.count() == 0) {
                 Venue v1 = createVenue("Kitty Su Mumbai", "The Lalit, Andheri East", 800, "https://images.unsplash.com/photo-1545128485-c400e7702796?w=600&q=80");
                 Venue v2 = createVenue("Prithvi Cafe", "Juhu Church Road, Juhu", 120, "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=80");
@@ -61,10 +60,9 @@ public class DataLoader {
                 venueRepository.saveAll(Objects.requireNonNull(List.of(v1, v2, v3, v4, v5)));
             }
 
-            // 3. Seed Events (Linked to Venues)
+            // Seed Events
             if (eventRepository.count() == 0) {
                 List<Venue> venues = venueRepository.findAll();
-                // Dynamic ID fetching is safer than hardcoding 3L
                 Long orgId = userRepository.findByEmail("organizer@atmos.com").map(User::getId).orElse(1L);
 
                 Event e1 = createEvent("Midnight Techno", "High BPM till 4 AM", 10, 5, 800, venues.get(0), orgId, 799.0, "Techno");
@@ -80,7 +78,6 @@ public class DataLoader {
         };
     }
 
-    // --- Helper Methods to reduce repetition ---
 
     private Venue createVenue(String name, String address, int cap, String url) {
         Venue v = new Venue();

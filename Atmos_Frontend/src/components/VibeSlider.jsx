@@ -8,7 +8,6 @@ export default function VibeSlider({ onVibeChange, initialLevel = 5 }) {
   const trackRef = useRef(null);
   const knobRef = useRef(null);
   const [level, setLevel] = useState(initialLevel);
-  // Need to use a ref to prevent stale closures in GSAP callbacks
   const levelRef = useRef(level);
 
   useEffect(() => {
@@ -18,7 +17,6 @@ export default function VibeSlider({ onVibeChange, initialLevel = 5 }) {
   useEffect(() => {
     let debounceTimer;
 
-    // Position the knob based on the CURRENT level, not just the center
     if (trackRef.current && knobRef.current) {
         const trackWidth = trackRef.current.clientWidth - knobRef.current.clientWidth;
         const initialX = ((level - 1) / 9) * trackWidth;
@@ -51,7 +49,6 @@ export default function VibeSlider({ onVibeChange, initialLevel = 5 }) {
       if(draggables) draggables.kill();
       clearTimeout(debounceTimer);
     }
-    // Only re-run if onVibeChange identity changes (which it shouldn't if memoized)
   }, [onVibeChange]);
 
   const getText = () => {
@@ -91,7 +88,6 @@ export default function VibeSlider({ onVibeChange, initialLevel = 5 }) {
             border: `2px solid ${getColor()}`
           }}
         >
-          {/* Inner glowing core */}
           <div className="w-8 h-8 rounded-full bg-white opacity-20 blur-[4px]" />
           <div className="absolute w-2 h-8 flex gap-1 items-center justify-center">
              <div className="w-0.5 h-4 bg-white/50 rounded-full" />

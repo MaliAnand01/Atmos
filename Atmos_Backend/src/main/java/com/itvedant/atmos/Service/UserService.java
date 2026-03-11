@@ -37,9 +37,7 @@ public class UserService {
         return userRepository.save(Objects.requireNonNull(user));
     }
 
-    /**
-     * Login: find by email, verify password, return user or null.
-     */
+    /** User login */
     public User login(String email, String password) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty())
@@ -76,7 +74,6 @@ public class UserService {
         if (updates.getPassword() != null && !updates.getPassword().isBlank()) {
             existing.setPassword(passwordEncoder.encode(updates.getPassword()));
         }
-        // Role can only be changed by admin — handled at controller level
         return userRepository.save(Objects.requireNonNull(existing));
     }
 
@@ -84,10 +81,8 @@ public class UserService {
     public void deleteUser(Long id) {
         if (id == null) return;
         
-        // Clean up bookings
         bookingRepository.deleteByUserId(id);
         
-        // Clean up hosted events if they are an organizer
         eventRepository.deleteByOrganizerId(id);
         
         userRepository.deleteById(id);

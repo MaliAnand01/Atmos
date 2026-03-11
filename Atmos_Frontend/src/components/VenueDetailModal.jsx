@@ -118,7 +118,7 @@ export default function VenueDetailModal({ isOpen, onClose, venue }) {
                 </div>
               </div>
 
-              {/* Upcoming Events Section */}
+              {/* Upcoming Events */}
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                    <h3 className="text-xl font-display font-bold text-white">Upcoming Sets</h3>
@@ -171,7 +171,6 @@ export default function VenueDetailModal({ isOpen, onClose, venue }) {
                 </div>
               </div>
 
-              {/* Footer CTA */}
               <div className="mt-12">
                  <ClayButton 
                     className="w-full bg-chill-blue text-void font-bold shadow-lg shadow-chill-blue/20"

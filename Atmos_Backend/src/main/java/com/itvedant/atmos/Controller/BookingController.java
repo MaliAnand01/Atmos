@@ -17,7 +17,6 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
-    // React will call this to populate the User Dashboard
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getUserBookings(@PathVariable Long userId) {
         return ResponseEntity.ok(bookingService.getUserBookings(userId));

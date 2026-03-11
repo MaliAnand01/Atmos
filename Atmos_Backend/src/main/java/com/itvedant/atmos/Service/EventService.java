@@ -32,19 +32,19 @@ public class EventService {
         return eventRepository.findAll();
     }
 
-    /** Paginated version for the Discover page */
+    /** Paginated events for Discover page */
     public Page<Event> getAllEventsPaged(Pageable pageable) {
         return eventRepository.findAll(Objects.requireNonNull(pageable));
 
     }
 
-    /** Search events by title or venue name (server-side) */
+    /** Search by title or venue */
     public List<Event> searchEvents(String query) {
         if (query == null || query.isBlank()) return getAllEvents();
         return eventRepository.searchByTitleOrVenue(query.trim());
     }
 
-    /** Filter events by category */
+    /** Filter by category */
     public List<Event> getEventsByCategory(String category) {
         if (category == null || category.isBlank() || category.equalsIgnoreCase("All"))
             return getAllEvents();
@@ -68,7 +68,7 @@ public class EventService {
         return eventRepository.findByVenueId(venueId);
     }
 
-    // The core logic for the React Vibe Slider — ±2 range gives richer results
+    /** Filter by Vibe energy level (±2 range) */
     public List<Event> getEventsByVibe(int vibeLevel) {
         return eventRepository.findByEnergyLevelBetween(
                 Math.max(1, vibeLevel - 2),
@@ -83,7 +83,7 @@ public class EventService {
         return eventRepository.save(Objects.requireNonNull(event));
     }
 
-    @Transactional // Rolls back if anything fails
+    @Transactional
     public Booking bookEvent(Long userId, Long eventId) {
         if (userId == null || eventId == null) {
             throw new RuntimeException("User ID and Event ID must not be null");
@@ -97,11 +97,9 @@ public class EventService {
             throw new RuntimeException("Event is sold out!");
         }
 
-        // Decrease capacity
         event.setAvailableCapacity(event.getAvailableCapacity() - 1);
         eventRepository.save(event);
 
-        // Create booking
         Booking booking = new Booking();
         booking.setUser(user);
         booking.setEvent(event);

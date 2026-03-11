@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import { api, getImageUrl } from "../services/api";
 import { useNavigate } from "react-router-dom";
 
-// Category labels map vibe energy ranges, OR real category string filter
+// Categories by energy ranges or genre
 const ENERGY_CATEGORIES = [
   { label: "All", type: "all" },
   { label: "High Energy", type: "energy" },
@@ -16,7 +16,7 @@ const ENERGY_CATEGORIES = [
   { label: "Chill", type: "chill" },
 ];
 
-// Real category names from backend (genres)
+// Genres from backend
 const GENRE_CATEGORIES = ["Techno", "EDM", "Live Music", "Classical", "Acoustic", "Jazz", "Comedy"];
 
 export default function Discover() {
@@ -26,7 +26,7 @@ export default function Discover() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Debounce search so we don't hammer the API on every keystroke
+  // Debounce search query
   useEffect(() => {
     const t = setTimeout(() => setDebounced(searchQuery), 350);
     return () => clearTimeout(t);
@@ -42,13 +42,10 @@ export default function Discover() {
     try {
       let data;
       if (debounced.trim()) {
-        // Server-side search
         data = await api.get(`/events/search?q=${encodeURIComponent(debounced)}`);
       } else if (GENRE_CATEGORIES.includes(activeCategory)) {
-        // Genre/category filter
         data = await api.get(`/events/category?name=${encodeURIComponent(activeCategory)}`);
       } else {
-        // Energy level filter (client-side from all events)
         data = await api.get('/events');
       }
       setEvents(data);

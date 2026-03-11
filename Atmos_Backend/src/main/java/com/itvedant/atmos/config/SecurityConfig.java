@@ -38,9 +38,7 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-                // Disable httpBasic so stale Authorization headers never trigger 401
-                .httpBasic(AbstractHttpConfigurer::disable)
-                // Permit everything — auth is handled via localStorage on the frontend
+                // Auth is handled client-side
                 .authorizeHttpRequests(auth -> auth
                         // Public Guest endpoints
                         .requestMatchers("/api/auth/**").permitAll()

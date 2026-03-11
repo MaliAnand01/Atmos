@@ -9,10 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-/**
- * Provides aggregate statistics for the Home page hero section.
- * GET /api/stats -> { events, venues, bookings }
- */
+/** Stats for hero section */
 @RestController
 @RequestMapping("/api/stats")
 public class StatsController {

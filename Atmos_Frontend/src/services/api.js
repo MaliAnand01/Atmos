@@ -1,20 +1,18 @@
-// api.js - Centralized Axios instance for Atmos API
+// Atmos API Service
 const API_BASE_URL = 'http://localhost:8080/api';
 
-// Create a generic fetch helper since we don't have axios installed yet in package.json
-// This sets up interceptors roughly similar to Axios
 
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
   }
 
-  // Headers for public endpoints - never send auth
+  /** Public headers */
   getPublicHeaders() {
     return { 'Content-Type': 'application/json' };
   }
 
-  // Headers for protected endpoints - include auth token and identity if exists
+  /** Auth and identity headers */
   getAuthHeaders() {
     const headers = { 'Content-Type': 'application/json' };
     const token = localStorage.getItem('atmos_token');
@@ -33,7 +31,7 @@ class ApiService {
     return headers;
   }
 
-  // GET request - supports public or authenticated
+  /** GET request */
   async get(endpoint, authenticated = false) {
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'GET',
@@ -47,7 +45,6 @@ class ApiService {
   }
 
   async post(endpoint, data) {
-    // Login and register should always be public to avoid stale token interference
     const usePublic = endpoint.includes('/auth/login') || endpoint.includes('/auth/register');
     
     const response = await fetch(`${this.baseURL}${endpoint}`, {
@@ -87,7 +84,7 @@ class ApiService {
     return await response.json();
   }
 
-  // Special upload method that doesn't set Content-Type so fetch calculates the boundary
+  /** Multi-part file upload */
   async upload(endpoint, file) {
     const formData = new FormData();
     formData.append('file', file);
@@ -116,8 +113,6 @@ class ApiService {
 export const getImageUrl = (url) => {
   if (!url) return "https://images.unsplash.com/photo-1470221339082-e088f2067c7b?w=800&q=80"; // Fallback
   if (url.startsWith('http')) return url;
-  // If it's a relative path from the backend (like /uploads/...)
-  // We point it to the backend's port 8080
   return `http://localhost:8080${url}`;
 };
 

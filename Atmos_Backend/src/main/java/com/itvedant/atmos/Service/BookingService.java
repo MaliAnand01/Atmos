@@ -27,11 +27,7 @@ public class BookingService {
         return bookingRepository.findByUserId(userId);
     }
 
-    /**
-     * Cancel a booking.
-     * - Validates that the booking belongs to the requesting user (or admin bypass via controller).
-     * - Restores the event's available capacity by 1.
-     */
+    /** Cancel a booking and restore event capacity */
     @Transactional
     public void cancelBooking(Long bookingId) {
         if (bookingId == null)
@@ -46,7 +42,6 @@ public class BookingService {
         booking.setStatus("CANCELLED");
         bookingRepository.save(Objects.requireNonNull(booking));
 
-        // Restore the event capacity now that the spot is freed
         Event event = booking.getEvent();
         event.setAvailableCapacity(event.getAvailableCapacity() + 1);
         eventRepository.save(event);

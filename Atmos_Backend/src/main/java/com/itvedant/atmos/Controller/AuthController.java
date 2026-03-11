@@ -17,12 +17,7 @@ public class AuthController {
         this.userService = userService;
     }
 
-    /**
-     * Register a new user.
-     * Body: { username, email, password, role? }
-     * Role defaults to ROLE_USER. Clients may send ROLE_ORGANIZER.
-     * ROLE_ADMIN is never accepted via this endpoint.
-     */
+    /** Register a new user */
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
         try {
@@ -31,7 +26,6 @@ public class AuthController {
             String password = body.get("password");
             String role     = body.getOrDefault("role", "ROLE_USER");
 
-            // Safety: never allow self-registration as admin
             if ("ROLE_ADMIN".equalsIgnoreCase(role)) {
                 role = "ROLE_USER";
             }
@@ -57,10 +51,7 @@ public class AuthController {
         }
     }
 
-    /**
-     * Login with email + password.
-     * Returns user info (no password) on success.
-     */
+    /** Authenticate and login */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
         String email    = body.get("email");
@@ -78,7 +69,6 @@ public class AuthController {
         return ResponseEntity.ok(toPublicUser(user));
     }
 
-    // Strip password before returning to client
     private Map<String, Object> toPublicUser(User u) {
         return Map.of(
             "id",       u.getId(),

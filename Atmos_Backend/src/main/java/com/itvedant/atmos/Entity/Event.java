@@ -30,7 +30,7 @@ public class Event {
 
     @Min(1) @Max(10)
     @Column(name = "energy_level", nullable = false)
-    private Integer energyLevel; // 1 (Chill) to 10 (High Energy)
+    private Integer energyLevel; // 1 (Chill) to 10 (High)
 
     @Column(name = "date_time", nullable = false)
     private LocalDateTime dateTime;

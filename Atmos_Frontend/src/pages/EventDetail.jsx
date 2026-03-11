@@ -83,7 +83,7 @@ export default function EventDetail() {
       exit={{ opacity: 0 }}
       className="bg-void min-h-screen font-body text-text-primary"
     >
-      {/* ── Hero Image ── */}
+      {/* Hero Image */}
       <div className="w-full h-[55vh] md:h-[70vh] relative overflow-hidden">
         <motion.img
           initial={{ scale: 1.08 }}
@@ -140,7 +140,7 @@ export default function EventDetail() {
         </div>
       </div>
 
-      {/* ── Body ── */}
+      {/* Details Container */}
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 flex flex-col lg:flex-row gap-16">
         
         {/* Left: Details */}
@@ -218,7 +218,7 @@ export default function EventDetail() {
           )}
         </motion.div>
 
-        {/* Right: Ticket sidebar */}
+        {/* Sidebar: Booking */}
         <div className="w-full lg:w-[360px] shrink-0">
           <div className="sticky top-28">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>

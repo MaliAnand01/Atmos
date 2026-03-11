@@ -35,9 +35,6 @@ export default function VenuesGrid() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-[300px]">
         {venues.map((venue, index) => {
-          // Logic for bento grid distribution
-          const isLarge = index === 0;
-          const isTall = index === 2;
           
           return (
             <ClayCard 

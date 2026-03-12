@@ -6,6 +6,8 @@ import ClayCard from "../components/ClayCard";
 import ClayButton from "../components/ClayButton";
 import CheckoutModal from "../components/CheckoutModal";
 import { api, getImageUrl } from "../services/api";
+import { getUser } from "../services/authStore";
+import toast from "react-hot-toast";
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -15,6 +17,7 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [liked, setLiked] = useState(false);
+  const user = getUser();
 
   useEffect(() => {
     const fetchEventData = async () => {
@@ -23,6 +26,12 @@ export default function EventDetail() {
         setError(null);
         const data = await api.get(`/events/${id}`);
         setEvent(data);
+        
+        // Check if event is in wishlist
+        if (user) {
+          const wl = await api.get(`/wishlist/${user.id}`);
+          setLiked(wl.some(fav => fav.id === parseInt(id)));
+        }
       } catch (err) {
         console.error("Failed to load event details:", err);
         setError("This event could not be found.");
@@ -31,7 +40,26 @@ export default function EventDetail() {
       }
     };
     if (id) fetchEventData();
-  }, [id]);
+  }, [id, user?.id]);
+
+  const handleWishlistToggle = async () => {
+    if (!user) {
+      navigate("/?auth=true");
+      return;
+    }
+    
+    const isAdding = !liked;
+    setLiked(isAdding); // Optimistic UI
+    
+    try {
+      await api.post(`/wishlist/${user.id}/${id}`, {});
+      toast.success(isAdding ? "Added to wishlist!" : "Removed from wishlist");
+    } catch (err) {
+      setLiked(liked); // Rollback on error
+      toast.error("Action failed");
+      console.error("Wishlist toggle failed:", err);
+    }
+  };
 
   // Derived energy color
   const energyColor = event
@@ -59,7 +87,7 @@ export default function EventDetail() {
           className="w-12 h-12 rounded-full border-2 border-chill-blue border-t-transparent"
         />
         <p className="text-text-secondary font-display tracking-widest text-sm uppercase animate-pulse">
-          Loading Signal...
+          Loading Event Details...
         </p>
       </div>
     );
@@ -68,9 +96,9 @@ export default function EventDetail() {
   if (error || !event) {
     return (
       <div className="min-h-screen bg-void flex flex-col justify-center items-center gap-6 text-center px-6">
-        <span className="text-6xl">🛸</span>
-        <h2 className="text-3xl font-display font-bold text-white">Signal Lost</h2>
-        <p className="text-text-secondary">{error || "This event doesn't exist."}</p>
+        <span className="text-6xl">📍</span>
+        <h2 className="text-3xl font-display font-bold text-white">Event Not Found</h2>
+        <p className="text-text-secondary">{error || "This event is no longer available."}</p>
         <ClayButton onClick={() => navigate("/")} variant="primary">Back to Home</ClayButton>
       </div>
     );
@@ -110,7 +138,7 @@ export default function EventDetail() {
           </button>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setLiked(l => !l)}
+              onClick={handleWishlistToggle}
               className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md border transition-all duration-300 ${liked ? "bg-energy-pink border-energy-pink text-white" : "bg-void/50 border-white/10 text-white"}`}
             >
               <Heart size={18} weight={liked ? "fill" : "regular"} />
@@ -182,7 +210,7 @@ export default function EventDetail() {
 
           {/* Vibe meter */}
           <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}>
-            <h2 className="text-2xl font-display font-bold mb-6">Vibe Frequency</h2>
+            <h2 className="text-2xl font-display font-bold mb-6">Event Vibe</h2>
             <div className="bg-clay-surface rounded-2xl p-6 border border-white/5">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-text-secondary text-sm">Chill</span>
@@ -229,7 +257,7 @@ export default function EventDetail() {
                 <div className="p-8">
                   <div className="flex items-center gap-3 mb-6">
                     <Ticket size={22} className="text-chill-blue" />
-                    <h3 className="text-xl font-display font-bold">Grab Your Spot</h3>
+                    <h3 className="text-xl font-display font-bold">Book Your Ticket</h3>
                   </div>
 
                   {/* Price */}

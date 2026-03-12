@@ -68,9 +68,9 @@ export default function HorizontalScrollFeed({ events = [] }) {
       {/* Section Header */}
       <div className="w-full max-w-7xl mx-auto px-6 mb-8 md:mb-12 relative z-20">
         <h2 className="text-3xl md:text-5xl font-display font-bold text-text-primary uppercase tracking-tight">
-          Trending Orbits
+          Trending Events
         </h2>
-        <p className="text-text-secondary mt-2 text-base md:text-lg">Top-tier frequencies detected near you.</p>
+        <p className="text-text-secondary mt-2 text-base md:text-lg">Top events happening near you.</p>
       </div>
 
       {/* Card Strip */}
@@ -104,7 +104,7 @@ export default function HorizontalScrollFeed({ events = [] }) {
                     <div className="relative z-10 p-6 md:p-8 h-full flex flex-col justify-end">
                       <div className="mb-auto flex justify-between items-start">
                         <span className="px-3 py-1 bg-clay-surface/50 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/10 shadow-clay">
-                          Level {evt.energyLevel}
+                          Energy Level {evt.energyLevel}
                         </span>
                         <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300">
                           <ArrowUpRight size={18} weight="bold" />
@@ -133,7 +133,7 @@ export default function HorizontalScrollFeed({ events = [] }) {
           </>
         ) : (
           <div className="w-full flex justify-center items-center py-32">
-            <p className="text-chill-blue text-2xl font-display animate-pulse">Waiting for signals...</p>
+            <p className="text-chill-blue text-2xl font-display animate-pulse">Loading events...</p>
           </div>
         )}
       </div>

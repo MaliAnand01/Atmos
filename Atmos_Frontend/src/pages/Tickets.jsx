@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { MapPin, Ticket, CalendarBlank } from "@phosphor-icons/react";
+import { MapPin, Ticket, CalendarBlank, ShieldCheck } from "@phosphor-icons/react";
 import ClayCard from "../components/ClayCard";
 import ClayButton from "../components/ClayButton";
 import Footer from "../components/Footer";
@@ -57,7 +57,10 @@ export default function Tickets() {
               const dateObj = new Date(event.dateTime);
               const dateStr = dateObj.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
               const timeStr = dateObj.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
-              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=atmos-booking-${booking.id}`;
+              
+              // Use booking hash for secure QR if available
+              const qrData = booking.bookingHash || `atmos-booking-${booking.id}`;
+              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
 
               return (
                 <motion.div
@@ -75,8 +78,15 @@ export default function Tickets() {
                     </div>
                     
                     <div className="flex flex-col justify-center flex-grow">
-                      <h3 className="text-2xl font-display font-bold text-white mb-1">{event.title}</h3>
-                      <div className="text-chill-blue font-medium mb-4 text-sm">General Admission · CONFIRMED</div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-2xl font-display font-bold text-white">{event.title}</h3>
+                        <ShieldCheck size={18} className="text-chill-blue" weight="fill" />
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase mb-4">
+                        <span className="text-chill-blue">General Admission</span>
+                        <span className="w-1 h-1 bg-white/20 rounded-full" />
+                        <span className="text-energy-pink">Confirmed Pulse</span>
+                      </div>
                       
                       <div className="flex flex-wrap gap-x-6 gap-y-2 text-text-secondary text-sm">
                         <div className="flex items-center gap-2">

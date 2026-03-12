@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-// import java.util.List;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -32,4 +32,15 @@ public class User {
     private String password;
 
     private String role;
+    
+    private String phone;
+    private String organizationName;
+    private String panGstin;
+
+    @Column(nullable = false)
+    private String organizerStatus = "APPROVED"; // Default to APPROVED for ROLE_USER/ROLE_ADMIN
+
+    private String otp;
+    private LocalDateTime otpExpiry;
+    private Boolean verified = false;
 }

@@ -53,4 +53,7 @@ public class Event {
 
     @Column
     private String category; // e.g. "Techno", "Jazz", "Live Music", "Comedy"
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean active = true;
 }

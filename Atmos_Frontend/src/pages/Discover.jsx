@@ -1,12 +1,15 @@
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
-import { MagnifyingGlass, Funnel, MapPin } from "@phosphor-icons/react";
+import { MagnifyingGlass, Funnel, MapPin, Heart } from "@phosphor-icons/react";
+import { getUser } from "../services/authStore";
 import ClayCard from "../components/ClayCard";
 import ClayButton from "../components/ClayButton";
 import Footer from "../components/Footer";
 import { Link } from "react-router-dom";
 import { api, getImageUrl } from "../services/api";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 
 // Categories by energy ranges or genre
 const ENERGY_CATEGORIES = [
@@ -21,10 +24,19 @@ const GENRE_CATEGORIES = ["Techno", "EDM", "Live Music", "Classical", "Acoustic"
 
 export default function Discover() {
   const [activeCategory, setActiveCategory] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [wishlist, setWishlist] = useState([]);
+  const user = getUser();
+
+  const { register, watch, setValue } = useForm({
+    defaultValues: {
+      searchQuery: ""
+    }
+  });
+
+  const searchQuery = watch("searchQuery");
 
   // Debounce search query
   useEffect(() => {
@@ -36,6 +48,12 @@ export default function Discover() {
   useEffect(() => {
     fetchEvents();
   }, [debounced, activeCategory]);
+
+  useEffect(() => {
+    if (user) {
+      api.get(`/wishlist/${user.id}`).then(setWishlist).catch(() => {});
+    }
+  }, [user?.id]);
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -55,6 +73,29 @@ export default function Discover() {
       setLoading(false);
     }
   };
+
+  const toggleWishlist = async (eventId) => {
+    if (!user) return toast.error("Please login to manage your wishlist!");
+    
+    const isCurrentlyWishlisted = wishlist.some(e => e.id === eventId);
+    
+    try {
+      await api.post(`/wishlist/${user.id}/${eventId}`);
+      
+      if (isCurrentlyWishlisted) {
+        setWishlist(prev => prev.filter(e => e.id !== eventId));
+        toast.success("Removed from wishlist");
+      } else {
+        const event = events.find(e => e.id === eventId);
+        setWishlist(prev => [...prev, event]);
+        toast.success("Added to wishlist!");
+      }
+    } catch (err) {
+      toast.error("Action failed");
+    }
+  };
+
+  const isInWishlist = (eventId) => wishlist.some(e => e.id === eventId);
 
   // Client-side energy filter for the 3 energy categories
   const filteredEvents = events.filter(evt => {
@@ -83,7 +124,7 @@ export default function Discover() {
           Discover
         </h1>
         <p className="text-text-secondary text-lg max-w-2xl mb-12">
-          Search for the right vibe, curated experiences, and top-tier venues perfectly tailored to your current frequency.
+          Find the best events, curated experiences, and top-tier venues for your next outing.
         </p>
 
         {/* Search & Filter Bar */}
@@ -91,10 +132,9 @@ export default function Discover() {
           <div className="relative flex-grow">
             <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
             <input 
+              {...register("searchQuery")}
               type="text" 
               placeholder="Search events, venues, DJs..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-clay-surface border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-text-primary focus:outline-none focus:border-chill-blue focus:ring-1 focus:ring-chill-blue transition-all"
             />
           </div>
@@ -108,7 +148,7 @@ export default function Discover() {
              {allCategories.map(category => (
                 <button 
                   key={category}
-                  onClick={() => { setActiveCategory(category); setSearchQuery(""); }}
+                  onClick={() => { setActiveCategory(category); setValue("searchQuery", ""); }}
                   className={`px-6 py-2 rounded-full whitespace-nowrap transition-all duration-300 font-medium text-sm ${
                     activeCategory === category 
                       ? "bg-text-primary text-void shadow-[0_0_15px_rgba(255,255,255,0.3)]"
@@ -140,8 +180,20 @@ export default function Discover() {
                             alt={evt.title} 
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
-                        <div className="absolute top-4 right-4 bg-void/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold border border-white/10 text-energy-pink">
-                           Level {evt.energyLevel}
+                        <div className="absolute top-4 right-4 flex gap-2">
+                           <button 
+                             onClick={(e) => { e.preventDefault(); toggleWishlist(evt.id); }}
+                             className={`p-2 rounded-full backdrop-blur-md border transition-all ${
+                               isInWishlist(evt.id) 
+                                 ? "bg-energy-pink border-energy-pink text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]" 
+                                 : "bg-void/60 border-white/10 text-white hover:border-energy-pink/50"
+                             }`}
+                           >
+                              <Heart size={16} weight={isInWishlist(evt.id) ? "fill" : "regular"} />
+                           </button>
+                           <div className="bg-void/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold border border-white/10 text-energy-pink">
+                              Energy Level {evt.energyLevel}
+                           </div>
                         </div>
                         {evt.category && (
                           <div className="absolute top-4 left-4 bg-chill-blue/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold border border-chill-blue/30 text-chill-blue">

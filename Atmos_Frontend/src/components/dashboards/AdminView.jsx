@@ -5,6 +5,17 @@ import { Users, Calendar, MapTrifold, ShieldCheck, Trash, Plus, Pencil } from "@
 import { api } from "../../services/api";
 import { getUser } from "../../services/authStore";
 import ClayButton from "../ClayButton";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import toast from "react-hot-toast";
+
+const venueSchema = z.object({
+    name: z.string().min(2, "Venue name must be at least 2 characters"),
+    address: z.string().min(5, "Address must be at least 5 characters"),
+    capacity: z.coerce.number().min(1, "Capacity must be at least 1"),
+    imageUrl: z.string().url("Invalid image URL").optional().or(z.literal("")),
+});
 
 export default function AdminView() {
     const [activeTab, setActiveTab] = useState("directory");
@@ -17,8 +28,22 @@ export default function AdminView() {
 
     // Venue Form State
     const [showVenueForm, setShowVenueForm] = useState(false);
-    const [newVenue, setNewVenue] = useState({ name: "", address: "", capacity: 500, imageUrl: "" });
     const [editingVenueId, setEditingVenueId] = useState(null);
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm({
+        resolver: zodResolver(venueSchema),
+        defaultValues: {
+            name: "",
+            address: "",
+            capacity: 500,
+            imageUrl: "",
+        }
+    });
 
     useEffect(() => {
         fetchAllData();
@@ -48,20 +73,20 @@ export default function AdminView() {
     };
 
     const handleDeleteUser = async (id) => {
-        if (!window.confirm("Banish this user from the protocol?")) return;
+        if (!window.confirm("Delete this user?")) return;
         try {
             await api.delete(`/users/${id}`);
             setUsersList(list => list.filter(u => u.id !== id));
             setStats(s => ({ ...s, users: s.users - 1 }));
-        } catch (err) { alert(err.message); }
+            toast.success("User deleted successfully.");
+        } catch (err) { toast.error(err.message); }
     };
 
-    const handleAddVenue = async (e) => {
-        e.preventDefault();
+    const onVenueSubmit = async (data) => {
         try {
             const method = editingVenueId ? 'put' : 'post';
             const endpoint = editingVenueId ? `/venues/${editingVenueId}` : '/venues';
-            const result = await api[method](endpoint, newVenue);
+            const result = await api[method](endpoint, data);
             
             if (editingVenueId) {
                 setVenuesList(list => list.map(v => v.id === editingVenueId ? result : v));
@@ -72,13 +97,14 @@ export default function AdminView() {
             }
             
             setShowVenueForm(false);
-            setNewVenue({ name: "", address: "", capacity: 500, imageUrl: "" });
-        } catch (err) { alert(err.message); }
+            reset({ name: "", address: "", capacity: 500, imageUrl: "" });
+            toast.success(editingVenueId ? "Venue updated!" : "New venue created!");
+        } catch (err) { toast.error(err.message); }
     };
 
     const handleEditVenue = (venue) => {
         setEditingVenueId(venue.id);
-        setNewVenue({
+        reset({
             name: venue.name,
             address: venue.address,
             capacity: venue.capacity,
@@ -88,21 +114,31 @@ export default function AdminView() {
     };
 
     const handleDeleteVenue = async (id) => {
-        if (!window.confirm("Remove this structural location?")) return;
+        if (!window.confirm("Delete this venue?")) return;
         try {
             await api.delete(`/venues/${id}`);
             setVenuesList(list => list.filter(v => v.id !== id));
             setStats(s => ({ ...s, venues: s.venues - 1 }));
-        } catch (err) { alert(err.message); }
+            toast.success("Venue deleted.");
+        } catch (err) { toast.error(err.message); }
     };
 
     const handleDeleteEvent = async (id) => {
-        if (!window.confirm("Permanently remove this event from the protocol?")) return;
+        if (!window.confirm("Delete this event?")) return;
         try {
             await api.delete(`/events/${id}`);
             setEventsList(list => list.filter(e => e.id !== id));
             setStats(s => ({ ...s, events: s.events - 1 }));
-        } catch (err) { alert(err.message); }
+            toast.success("Event removed from system.");
+        } catch (err) { toast.error(err.message); }
+    };
+
+    const handleApproveOrganizer = async (id) => {
+        try {
+            await api.put(`/users/${id}`, { organizerStatus: "APPROVED" });
+            setUsersList(list => list.map(u => u.id === id ? { ...u, organizerStatus: "APPROVED" } : u));
+            toast.success("Organizer application approved!");
+        } catch (err) { toast.error(err.message); }
     };
 
     return (
@@ -137,6 +173,7 @@ export default function AdminView() {
             {/* Navigation Tabs */}
             <div className="flex gap-4 p-1 bg-void rounded-2xl border border-white/5 w-fit">
                 <button onClick={() => setActiveTab("directory")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'directory' ? 'bg-chill-blue text-void' : 'text-text-secondary hover:text-white'}`}>Users</button>
+                <button onClick={() => setActiveTab("pending")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'pending' ? 'bg-energy-orange text-white' : 'text-text-secondary hover:text-white'}`}>Pending Organizers</button>
                 <button onClick={() => setActiveTab("events")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'events' ? 'bg-energy-pink text-white' : 'text-text-secondary hover:text-white'}`}>Events</button>
                 <button onClick={() => setActiveTab("venues")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'venues' ? 'bg-white text-void' : 'text-text-secondary hover:text-white'}`}>Venues</button>
             </div>
@@ -150,15 +187,81 @@ export default function AdminView() {
                                     <div className="flex items-center gap-4">
                                         <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${user.role === 'ROLE_ADMIN' ? 'bg-energy-pink text-white' : 'bg-void text-text-secondary border border-white/10'}`}>{user.username.charAt(0)}</div>
                                         <div>
-                                            <p className="font-bold text-sm tracking-wide">{user.username}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-bold text-sm tracking-wide">{user.username}</p>
+                                                {user.organizerStatus === 'PENDING' && (
+                                                    <span className="w-2 h-2 rounded-full bg-energy-orange animate-pulse" title="Pending Approval" />
+                                                )}
+                                            </div>
                                             <p className="text-[10px] text-text-secondary uppercase font-bold tracking-tighter">{user.role.replace('ROLE_', '')}</p>
                                         </div>
                                     </div>
-                                    {user.id !== currentUser?.id && (
-                                        <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-text-secondary hover:text-energy-pink opacity-0 group-hover:opacity-100 transition-all"><Trash size={18} /></button>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {user.organizerStatus === 'PENDING' && (
+                                            <button onClick={() => handleApproveOrganizer(user.id)} className="p-2 text-chill-blue hover:scale-110 transition-transform" title="Approve"><ShieldCheck size={18} /></button>
+                                        )}
+                                        {user.id !== currentUser?.id && (
+                                            <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-text-secondary hover:text-energy-pink opacity-0 group-hover:opacity-100 transition-all"><Trash size={18} /></button>
+                                        )}
+                                    </div>
                                 </ClayCard>
                             ))}
+                        </div>
+                    </motion.div>
+                )}
+
+                {activeTab === "pending" && (
+                    <motion.div key="pending" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {usersList.filter(u => u.organizerStatus === 'PENDING').length === 0 ? (
+                                <p className="text-text-secondary text-sm italic col-span-full py-12 text-center">No organizer applications awaiting verification.</p>
+                            ) : (
+                                usersList.filter(u => u.organizerStatus === 'PENDING').map(user => (
+                                    <ClayCard key={user.id} className="p-6 border border-energy-orange/20 bg-energy-orange/5 relative overflow-hidden group">
+                                        <div className="flex justify-between items-start">
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <h4 className="text-lg font-bold font-display">{user.organizationName || user.username}</h4>
+                                                    <p className="text-xs text-text-secondary font-medium tracking-wide">ORGANIZER APPLICATION</p>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[11px] font-bold uppercase tracking-widest text-text-secondary">
+                                                    <div>
+                                                        <span className="opacity-50 block mb-1">PHONE</span>
+                                                        <span className="text-white">{user.phone || 'NOT PROVIDED'}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="opacity-50 block mb-1">TAX ID / PAN</span>
+                                                        <span className="text-white">{user.panGstin || 'NOT PROVIDED'}</span>
+                                                    </div>
+                                                    <div className="col-span-2">
+                                                        <span className="opacity-50 block mb-1">EMAIL</span>
+                                                        <span className="text-white">{user.email}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-3 pt-2">
+                                                    <button 
+                                                        onClick={() => handleApproveOrganizer(user.id)}
+                                                        className="px-6 py-2 bg-chill-blue text-void text-xs font-bold rounded-full hover:shadow-[0_0_20_rgba(0,184,212,0.4)] transition-all"
+                                                    >
+                                                        APPROVE
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDeleteUser(user.id)}
+                                                        className="px-6 py-2 border border-energy-pink/30 text-energy-pink text-xs font-bold rounded-full hover:bg-energy-pink/10 transition-all"
+                                                    >
+                                                        REJECT
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div className="p-4 bg-energy-orange/10 rounded-3xl text-energy-orange">
+                                                <Users size={32} weight="duotone" />
+                                            </div>
+                                        </div>
+                                    </ClayCard>
+                                ))
+                            )}
                         </div>
                     </motion.div>
                 )}
@@ -167,20 +270,34 @@ export default function AdminView() {
                     <motion.div key="ven" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
                         <div className="flex justify-between items-center">
                             <h3 className="text-xl font-bold font-display">Manage Venues</h3>
-                            <ClayButton onClick={() => { setShowVenueForm(!showVenueForm); if(showVenueForm) setEditingVenueId(null); }} variant={showVenueForm ? "secondary" : "primary"} className="px-4 py-2 text-xs">
+                            <ClayButton onClick={() => { setShowVenueForm(!showVenueForm); if(showVenueForm) { setEditingVenueId(null); reset({ name: "", address: "", capacity: 500, imageUrl: "" }); } }} variant={showVenueForm ? "secondary" : "primary"} className="px-4 py-2 text-xs">
                                 {showVenueForm ? "Cancel" : "Add New Venue"}
                             </ClayButton>
                         </div>
 
                         {showVenueForm && (
                             <ClayCard className="p-6 border-chill-blue/30 bg-chill-blue/5">
-                                <form onSubmit={handleAddVenue} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input value={newVenue.name} onChange={e => setNewVenue({...newVenue, name: e.target.value})} placeholder="Venue Name" className="bg-void border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-chill-blue outline-none" required />
-                                    <input value={newVenue.address} onChange={e => setNewVenue({...newVenue, address: e.target.value})} placeholder="Address (e.g. Bandra, Mumbai)" className="bg-void border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-chill-blue outline-none" required />
-                                    <input type="number" value={newVenue.capacity} onChange={e => setNewVenue({...newVenue, capacity: e.target.value})} placeholder="Seating Capacity" className="bg-void border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-chill-blue outline-none" required />
-                                    <input value={newVenue.imageUrl} onChange={e => setNewVenue({...newVenue, imageUrl: e.target.value})} placeholder="Image URL" className="bg-void border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-chill-blue outline-none" />
+                                <form onSubmit={handleSubmit(onVenueSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="flex flex-col gap-1">
+                                        <input {...register("name")} placeholder="Venue Name" className="bg-void border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-chill-blue outline-none" />
+                                        {errors.name && <p className="text-energy-pink text-[10px] ml-1">{errors.name.message}</p>}
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <input {...register("address")} placeholder="Address (e.g. Bandra, Mumbai)" className="bg-void border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-chill-blue outline-none" />
+                                        {errors.address && <p className="text-energy-pink text-[10px] ml-1">{errors.address.message}</p>}
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <input {...register("capacity")} type="number" placeholder="Seating Capacity" className="bg-void border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-chill-blue outline-none" />
+                                        {errors.capacity && <p className="text-energy-pink text-[10px] ml-1">{errors.capacity.message}</p>}
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <input {...register("imageUrl")} placeholder="Image URL" className="bg-void border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-chill-blue outline-none" />
+                                        {errors.imageUrl && <p className="text-energy-pink text-[10px] ml-1">{errors.imageUrl.message}</p>}
+                                    </div>
                                     <div className="md:col-span-2">
-                                        <ClayButton type="submit" className="w-full bg-chill-blue text-void font-bold">{editingVenueId ? "Save Changes" : "Add Venue"}</ClayButton>
+                                        <ClayButton type="submit" disabled={isSubmitting} className="w-full bg-chill-blue text-void font-bold">
+                                            {isSubmitting ? "Processing..." : editingVenueId ? "Save Changes" : "Add Venue"}
+                                        </ClayButton>
                                     </div>
                                 </form>
                             </ClayCard>

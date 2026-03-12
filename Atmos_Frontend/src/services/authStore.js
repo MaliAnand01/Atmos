@@ -21,8 +21,7 @@ export const isLoggedIn = () => {
 
 export const logout = () => {
   localStorage.removeItem('atmos_user');
-  localStorage.removeItem('atmos_token'); // Clear the Basic Auth token too
-  window.location.href = '/'; // Redirect to home
+  localStorage.removeItem('atmos_token'); 
 };
 
 export const getAuthHeader = () => {

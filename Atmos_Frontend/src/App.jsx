@@ -12,6 +12,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { isLoggedIn } from "./services/authStore";
 import { ReactLenis } from 'lenis/react';
+import { Toaster } from "react-hot-toast";
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -75,6 +76,32 @@ function AnimatedRoutes() {
 function App() {
   return (
     <ReactLenis root>
+      <Toaster 
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: '#14161E',
+            color: '#F8FAFC',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '16px',
+            fontSize: '14px',
+            padding: '12px 24px',
+          },
+          success: {
+            iconTheme: {
+              primary: '#00F0FF',
+              secondary: '#14161E',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#FF007F',
+              secondary: '#14161E',
+            },
+          }
+        }}
+      />
       <Router>
         <AnimatedRoutes />
       </Router>

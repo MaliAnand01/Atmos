@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -21,14 +22,18 @@ public class UserController {
     /** Admin: list all users */
     @GetMapping
     public ResponseEntity<?> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+        return ResponseEntity.ok(
+            userService.getAllUsers().stream()
+                .map(userService::mapToResponse)
+                .collect(Collectors.toList())
+        );
     }
 
     /** Get user profile */
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)
-                .map(u -> ResponseEntity.ok((Object) toPublicUser(u)))
+                .map(u -> ResponseEntity.ok((Object) userService.mapToResponse(u)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -39,7 +44,7 @@ public class UserController {
             @RequestBody User updates) {
         try {
             User updated = userService.updateUser(id, updates);
-            return ResponseEntity.ok(toPublicUser(updated));
+            return ResponseEntity.ok(userService.mapToResponse(updated));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -50,14 +55,5 @@ public class UserController {
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.ok(Map.of("message", "User deleted."));
-    }
-
-    private Map<String, Object> toPublicUser(User u) {
-        return Map.of(
-            "id",       u.getId(),
-            "username", u.getUsername(),
-            "email",    u.getEmail(),
-            "role",     u.getRole()
-        );
     }
 }

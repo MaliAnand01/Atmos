@@ -25,8 +25,12 @@ public class Booking {
     private Event event;
 
     @Column(nullable = false)
-    private String status; // "ACTIVE", "CANCELLED"
+    private String status; // "ACTIVE", "CANCELLED", "PENDING_PAYMENT"
 
     @Column(name = "booking_time", nullable = false)
     private LocalDateTime bookingTime = LocalDateTime.now();
+
+    private String paymentStatus = "PENDING"; // PENDING, SUCCESS, FAILED
+    private String razorpayPaymentId;
+    private String bookingHash; // for QR code security
 }

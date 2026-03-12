@@ -1,0 +1,25 @@
+# IDEs and Editors
+.vscode/
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Build and Dependencies (handled in subdirectories, but good to have here as well)
+node_modules/
+target/
+dist/
+build/
+out/
+docs/
+
+# Atmos Specific
+Atmos_Backend/uploads/
+*.log
+Atmos_Backend/body.txt
+Atmos_Backend/headers.txt
+Atmos_Backend/backend.log

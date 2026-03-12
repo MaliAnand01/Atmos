@@ -5,6 +5,23 @@ import ClayCard from "../ClayCard";
 import ClayButton from "../ClayButton";
 import { api, getImageUrl } from "../../services/api";
 import { getUser } from "../../services/authStore";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import toast from "react-hot-toast";
+
+const eventSchema = z.object({
+    title: z.string().min(3, "Title must be at least 3 characters"),
+    description: z.string().min(10, "Description must be at least 10 characters"),
+    energyLevel: z.coerce.number().min(1).max(10),
+    venueId: z.string().min(1, "Please select a venue"),
+    capacity: z.coerce.number().min(1, "Capacity must be at least 1"),
+    price: z.coerce.number().min(0, "Price cannot be negative"),
+    dateTime: z.string().refine((val) => {
+        const date = new Date(val);
+        return date > new Date();
+    }, { message: "Please select a future date and time" }),
+});
 
 export default function OrganizerView() {
     const [step, setStep] = useState(1);
@@ -13,20 +30,33 @@ export default function OrganizerView() {
     const [loading, setLoading] = useState(true);
     const user = getUser();
     
-    // Create Event Form State
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [energyLevel, setEnergyLevel] = useState(5);
-    const [venueId, setVenueId] = useState("");
-    const [capacity, setCapacity] = useState(100);
-    const [price, setPrice] = useState(499);
-    const [dateTime, setDateTime] = useState("");
+    // Non-form UI states
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadSuccess, setUploadSuccess] = useState(false);
-    const [formError, setFormError] = useState("");
     const [editingEventId, setEditingEventId] = useState(null);
+
+    const {
+        register,
+        handleSubmit,
+        trigger,
+        watch,
+        setValue,
+        reset,
+        formState: { errors },
+    } = useForm({
+        resolver: zodResolver(eventSchema),
+        defaultValues: {
+            energyLevel: 5,
+            capacity: 100,
+            price: 499,
+        }
+    });
+
+    const energyLevel = watch("energyLevel");
+    const title = watch("title");
+    const venueId = watch("venueId");
 
     useEffect(() => {
         fetchMyEvents();
@@ -49,28 +79,25 @@ export default function OrganizerView() {
         try {
             const data = await api.get('/venues');
             setVenues(data);
-            if (data.length > 0) setVenueId(data[0].id);
+            if (data.length > 0) setValue("venueId", data[0].id.toString());
         } catch (err) {
             console.error("Failed to fetch venues:", err);
         }
     };
 
-    const nextStep = () => {
-        setFormError("");
-        if (step === 2) {
-            // Validate datetime
-            if (!dateTime || new Date(dateTime) <= new Date()) {
-                setFormError("Please select a future date and time.");
-                return;
-            }
-            if (!venueId) {
-                setFormError("Please select a venue.");
-                return;
-            }
+    const nextStep = async () => {
+        let isStepValid = false;
+        if (step === 1) {
+            isStepValid = await trigger(["title", "description"]);
+        } else if (step === 2) {
+            isStepValid = await trigger(["energyLevel", "capacity", "price", "venueId", "dateTime"]);
+        } else if (step === 3) {
+            // Step 3 is just image upload, we'll proceed to launch
+            await handleSubmit(handleFinalPublish)();
+            return;
         }
-        if (step === 3) {
-            handleFinalLaunch();
-        } else {
+
+        if (isStepValid) {
             setStep(s => Math.min(4, s + 1));
         }
     };
@@ -85,7 +112,7 @@ export default function OrganizerView() {
         }
     };
 
-    const handleFinalLaunch = async () => {
+    const handleFinalPublish = async (data) => {
         setIsUploading(true);
         try {
             let imageUrl = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80"; // Fallback
@@ -97,15 +124,15 @@ export default function OrganizerView() {
 
             // Create the real event
             const eventPayload = {
-                title,
-                description,
-                energyLevel: parseInt(energyLevel),
+                title: data.title,
+                description: data.description,
+                energyLevel: parseInt(data.energyLevel),
                 imageUrl,
-                dateTime: dateTime,
-                totalCapacity: parseInt(capacity),
-                availableCapacity: parseInt(capacity),
-                price: parseFloat(price),
-                venue: { id: parseInt(venueId) },
+                dateTime: data.dateTime,
+                totalCapacity: parseInt(data.capacity),
+                availableCapacity: parseInt(data.capacity),
+                price: parseFloat(data.price),
+                venue: { id: parseInt(data.venueId) },
                 organizerId: user.id
             };
 
@@ -118,10 +145,12 @@ export default function OrganizerView() {
             setStep(4);
             setEditingEventId(null);
             fetchMyEvents(); // Refresh list
+            toast.success(editingEventId ? "Event updated successfully!" : "Event published successfully!");
         } catch (error) {
             console.error("Launch failed:", error);
             setUploadSuccess(false);
             setStep(4);
+            toast.error("Failed to publish event. Please check your data.");
         } finally {
             setIsUploading(false);
         }
@@ -129,13 +158,15 @@ export default function OrganizerView() {
 
     const handleEdit = (event) => {
         setEditingEventId(event.id);
-        setTitle(event.title);
-        setDescription(event.description);
-        setEnergyLevel(event.energyLevel);
-        setVenueId(event.venue.id);
-        setCapacity(event.totalCapacity);
-        setPrice(event.price);
-        setDateTime(event.dateTime);
+        reset({
+            title: event.title,
+            description: event.description,
+            energyLevel: event.energyLevel,
+            venueId: event.venue.id.toString(),
+            capacity: event.totalCapacity,
+            price: event.price,
+            dateTime: event.dateTime,
+        });
         setPreviewUrl(getImageUrl(event.imageUrl));
         setStep(1);
     };
@@ -145,17 +176,24 @@ export default function OrganizerView() {
         try {
             await api.delete(`/events/${id}`);
             fetchMyEvents();
+            toast.success("Event deleted and bookings cancelled.");
         } catch (err) {
             console.error("Failed to delete event:", err);
+            toast.error("Failed to delete event.");
         }
     };
 
     const resetForm = () => {
         setEditingEventId(null);
-        setTitle("");
-        setDescription("");
-        setEnergyLevel(5);
-        setDateTime("");
+        reset({
+            title: "",
+            description: "",
+            energyLevel: 5,
+            venueId: venues.length > 0 ? venues[0].id.toString() : "",
+            capacity: 100,
+            price: 499,
+            dateTime: "",
+        });
         setPreviewUrl(null);
         setSelectedFile(null);
         setStep(1);
@@ -191,7 +229,7 @@ export default function OrganizerView() {
                                         <div className="absolute inset-0 bg-gradient-to-t from-void to-transparent" />
                                         <div className="absolute bottom-3 left-4">
                                             <span className="text-[10px] font-bold uppercase tracking-widest bg-chill-blue/20 text-chill-blue px-2 py-1 rounded-md border border-chill-blue/30">
-                                                Vibe {event.energyLevel}
+                                                Energy {event.energyLevel}
                                             </span>
                                         </div>
                                     </div>
@@ -209,7 +247,7 @@ export default function OrganizerView() {
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-2 text-xs text-text-secondary">
-                                            <div className="flex items-center gap-2"><MapPin size={14} className="text-chill-blue" /> {event.venue.name}</div>
+                                            <div className="flex items-center gap-2"><MapPin size={14} className="text-chill-blue" /> {event.venue?.name || 'Venue tbd'}</div>
                                             <div className="flex items-center gap-2 font-medium">
                                                 <span className="text-chill-blue">{event.totalCapacity - event.availableCapacity}</span> / {event.totalCapacity} Sold
                                             </div>
@@ -241,33 +279,32 @@ export default function OrganizerView() {
                                         <div>
                                             <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Event Name</label>
                                             <input 
-                                                value={title}
-                                                onChange={e => setTitle(e.target.value)}
+                                                {...register("title")}
                                                 type="text" 
                                                 className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/10" 
                                                 placeholder="Event Title" 
                                             />
+                                            {errors.title && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.title.message}</p>}
                                         </div>
                                         <div>
                                             <textarea 
-                                                value={description}
-                                                onChange={e => setDescription(e.target.value)}
+                                                {...register("description")}
                                                 rows={3}
                                                 className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/10 resize-none text-sm" 
                                                 placeholder="Tell people what this event is about..." 
                                             />
+                                            {errors.description && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.description.message}</p>}
                                         </div>
                                     </motion.div>
                                 )}
                                 {step === 2 && (
                                     <motion.div key="step2" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
                                         <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Intensity (1-10)</label>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Energy Level (1-10)</label>
                                             <input 
+                                                {...register("energyLevel")}
                                                 type="range" 
                                                 min="1" max="10" 
-                                                value={energyLevel}
-                                                onChange={e => setEnergyLevel(e.target.value)}
                                                 className="w-full h-1.5 bg-void rounded-lg appearance-none cursor-pointer accent-chill-blue" 
                                             />
                                             <div className="flex justify-between mt-2 text-[10px] font-bold text-text-secondary">
@@ -280,27 +317,26 @@ export default function OrganizerView() {
                                             <div>
                                                 <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Capacity</label>
                                                 <input 
+                                                    {...register("capacity")}
                                                     type="number" 
-                                                    value={capacity}
-                                                    onChange={e => setCapacity(e.target.value)}
                                                     className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-sm" 
                                                 />
+                                                {errors.capacity && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.capacity.message}</p>}
                                             </div>
                                             <div>
                                                 <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Price (₹)</label>
                                                 <input 
+                                                    {...register("price")}
                                                     type="number" 
-                                                    value={price}
-                                                    onChange={e => setPrice(e.target.value)}
                                                     className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-sm" 
                                                 />
+                                                {errors.price && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.price.message}</p>}
                                             </div>
                                         </div>
                                         <div>
                                             <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Venue</label>
                                             <select
-                                                value={venueId}
-                                                onChange={e => setVenueId(e.target.value)}
+                                                {...register("venueId")}
                                                 className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-sm"
                                             >
                                                 {venues.length === 0 && <option value="">Loading venues...</option>}
@@ -308,17 +344,17 @@ export default function OrganizerView() {
                                                     <option key={v.id} value={v.id}>{v.name} (cap: {v.capacity})</option>
                                                 ))}
                                             </select>
+                                            {errors.venueId && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.venueId.message}</p>}
                                         </div>
                                         <div>
                                             <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Date & Time</label>
                                             <input 
+                                                {...register("dateTime")}
                                                 type="datetime-local" 
-                                                value={dateTime}
-                                                onChange={e => setDateTime(e.target.value)}
                                                 className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-sm" 
                                             />
+                                            {errors.dateTime && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.dateTime.message}</p>}
                                         </div>
-                                        {formError && <p className="text-energy-pink text-xs text-center">{formError}</p>}
                                     </motion.div>
                                 )}
                                 {step === 3 && (
@@ -378,10 +414,10 @@ export default function OrganizerView() {
                                     <ClayButton 
                                         variant="primary" 
                                         onClick={nextStep} 
-                                        disabled={isUploading || (step === 1 && !title)}
+                                        disabled={isUploading}
                                         className={`flex-1 text-xs py-2 shadow-lg transition-all ${step === 3 ? "bg-chill-blue text-void hover:shadow-[0_0_20px_rgba(0,240,255,0.4)]" : "bg-white text-void"}`}
                                     >
-                                        {isUploading ? "Saving..." : step === 3 ? (editingEventId ? "Save Changes" : "Create Event") : "Next"}
+                                        {isUploading ? "Saving..." : step === 3 ? (editingEventId ? "Save Changes" : "Publish Event") : "Next"}
                                     </ClayButton>
                                 </>
                             )}

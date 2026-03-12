@@ -52,9 +52,9 @@ export default function VibeSlider({ onVibeChange, initialLevel =  5}) {
   }, [onVibeChange]);
 
   const getText = () => {
-    if(level <= 3) return "Deep Chill / Acoustic";
+    if(level <= 3) return "Chill / Relaxed";
     if(level <= 7) return "Balanced / Groove";
-    return "High Energy / Club";
+    return "High Energy / Intense";
   };
 
   const getColor = () => {
@@ -72,7 +72,7 @@ export default function VibeSlider({ onVibeChange, initialLevel =  5}) {
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-6 my-6 md:my-12 relative z-10">
       <div className="text-center">
-        <h3 className="text-text-secondary font-display text-xl uppercase tracking-[0.2em] mb-2">Target Vibe</h3>
+        <h3 className="text-text-secondary font-display text-xl uppercase tracking-[0.2em] mb-2">Energy Level</h3>
         <p className="text-4xl md:text-6xl font-display font-bold drop-shadow-[0_0_12px_rgba(255,255,255,0.1)] transition-colors duration-500" style={{ color: getColor() }}>
           {level} <span className="text-3xl text-text-secondary">/ 10</span>
         </p>

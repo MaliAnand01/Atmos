@@ -29,13 +29,12 @@ public class EventService {
     }
 
     public List<Event> getAllEvents() {
-        return eventRepository.findAll();
+        return eventRepository.findAllByActiveTrue();
     }
 
     /** Paginated events for Discover page */
     public Page<Event> getAllEventsPaged(Pageable pageable) {
-        return eventRepository.findAll(Objects.requireNonNull(pageable));
-
+        return eventRepository.findAllByActiveTrue(Objects.requireNonNull(pageable));
     }
 
     /** Search by title or venue */
@@ -73,13 +72,24 @@ public class EventService {
         return eventRepository.findByEnergyLevelBetween(
                 Math.max(1, vibeLevel - 2),
                 Math.min(10, vibeLevel + 2)
-        );
+        ).stream().filter(Event::getActive).toList();
     }
 
     public Event createEvent(Event event) {
         if (event == null) {
             throw new RuntimeException("Event data must not be null");
         }
+        
+        // Security: Verify organizer is approved
+        if (event.getOrganizerId() != null) {
+            User organizer = userRepository.findById(Objects.requireNonNull(event.getOrganizerId()))
+                .orElseThrow(() -> new RuntimeException("Organizer not found"));
+            
+            if (!"APPROVED".equalsIgnoreCase(organizer.getOrganizerStatus())) {
+                throw new RuntimeException("Your account is pending verification. Event creation is restricted.");
+            }
+        }
+        
         return eventRepository.save(Objects.requireNonNull(event));
     }
 
@@ -103,7 +113,7 @@ public class EventService {
         Booking booking = new Booking();
         booking.setUser(user);
         booking.setEvent(event);
-        booking.setStatus("ACTIVE");
+        booking.setStatus("PENDING_PAYMENT");
 
         return bookingRepository.save(Objects.requireNonNull(booking));
     }
@@ -126,6 +136,7 @@ public class EventService {
         if (updates.getPrice() != null) event.setPrice(updates.getPrice());
         if (updates.getVenue() != null) event.setVenue(updates.getVenue());
         if (updates.getCategory() != null) event.setCategory(updates.getCategory());
+        if (updates.getActive() != null) event.setActive(updates.getActive());
         
         return eventRepository.save(Objects.requireNonNull(event));
     }

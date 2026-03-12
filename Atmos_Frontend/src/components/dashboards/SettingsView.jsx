@@ -5,31 +5,53 @@ import ClayCard from "../ClayCard";
 import ClayButton from "../ClayButton";
 import { api } from "../../services/api";
 import { getUser, logout } from "../../services/authStore";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const settingsSchema = z.object({
+    username: z.string().min(3, "Username must be at least 3 characters"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
+});
 
 export default function SettingsView() {
     const user = getUser();
-    const [username, setUsername] = useState(user?.username || "");
-    const [email, setEmail] = useState(user?.email || "");
-    const [password, setPassword] = useState("");
     const [status, setStatus] = useState({ type: "", message: "" });
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-    const handleUpdate = async (e) => {
-        e.preventDefault();
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isDirty },
+    } = useForm({
+        resolver: zodResolver(settingsSchema),
+        defaultValues: {
+            username: user?.username || "",
+            email: user?.email || "",
+            password: "",
+        }
+    });
+
+    const onUpdateSubmit = async (data) => {
         setStatus({ type: "loading", message: "Updating profile..." });
         try {
-            const updates = { username, email };
-            if (password) updates.password = password;
+            const updates = { 
+                username: data.username, 
+                email: data.email 
+            };
+            if (data.password) updates.password = data.password;
             
             await api.put(`/users/${user.id}`, updates);
             
             // Update local storage
-            const updatedUser = { ...user, username, email };
+            const updatedUser = { ...user, username: data.username, email: data.email };
             localStorage.setItem('atmos_user', JSON.stringify(updatedUser));
             
             setStatus({ type: "success", message: "Profile updated successfully!" });
-            setPassword("");
+            reset({ ...data, password: "" });
         } catch (err) {
             setStatus({ type: "error", message: err.message || "Failed to update profile" });
         }
@@ -58,43 +80,43 @@ export default function SettingsView() {
                 {/* Profile Form */}
                 <div className="md:col-span-2">
                     <ClayCard className="p-8">
-                        <form onSubmit={handleUpdate} className="space-y-6">
+                        <form onSubmit={handleSubmit(onUpdateSubmit)} className="space-y-6">
                             <div className="space-y-4">
                                 <div>
                                     <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Username</label>
                                     <div className="relative">
                                         <User className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
                                         <input 
-                                            value={username}
-                                            onChange={e => setUsername(e.target.value)}
+                                            {...register("username")}
                                             className="w-full bg-void text-white p-3 pl-12 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all" 
                                         />
                                     </div>
+                                    {errors.username && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.username.message}</p>}
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Email Address</label>
                                     <div className="relative">
                                         <Envelope className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
                                         <input 
-                                            value={email}
+                                            {...register("email")}
                                             type="email"
-                                            onChange={e => setEmail(e.target.value)}
                                             className="w-full bg-void text-white p-3 pl-12 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all" 
                                         />
                                     </div>
+                                    {errors.email && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.email.message}</p>}
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">New Password (Optional)</label>
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
                                         <input 
-                                            value={password}
+                                            {...register("password")}
                                             type="password"
-                                            onChange={e => setPassword(e.target.value)}
                                             placeholder="Leave blank to keep current"
                                             className="w-full bg-void text-white p-3 pl-12 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/10" 
                                         />
                                     </div>
+                                    {errors.password && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.password.message}</p>}
                                 </div>
                             </div>
 
@@ -107,7 +129,7 @@ export default function SettingsView() {
                             <ClayButton 
                                 type="submit" 
                                 variant="primary" 
-                                disabled={status.type === "loading"}
+                                disabled={status.type === "loading" || !isDirty}
                                 className="w-full md:w-auto px-8"
                             >
                                 {status.type === "loading" ? "Saving..." : "Save Changes"}
@@ -117,8 +139,9 @@ export default function SettingsView() {
                 </div>
 
                 {/* Account Actions / Danger Zone */}
-                <div className="space-y-6">
-                    <ClayCard className="p-6 border-energy-pink/20 bg-energy-pink/5">
+                {user?.role !== "ROLE_ADMIN" && (
+                    <div className="space-y-6">
+                        <ClayCard className="p-6 border-energy-pink/20 bg-energy-pink/5">
                         <div className="flex items-center gap-3 mb-4 text-energy-pink">
                             <Warning size={24} weight="fill" />
                             <h3 className="font-bold">Danger Zone</h3>
@@ -155,6 +178,7 @@ export default function SettingsView() {
                         )}
                     </ClayCard>
                 </div>
+                )}
             </div>
         </div>
     );

@@ -16,14 +16,34 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final com.itvedant.atmos.Repo.BookingRepository bookingRepository;
     private final com.itvedant.atmos.Repo.EventRepository eventRepository;
+    private final NotificationService notificationService;
+    private final OTPService otpService;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, 
                        com.itvedant.atmos.Repo.BookingRepository bookingRepository,
-                       com.itvedant.atmos.Repo.EventRepository eventRepository) {
+                       com.itvedant.atmos.Repo.EventRepository eventRepository,
+                       NotificationService notificationService,
+                       OTPService otpService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.bookingRepository = bookingRepository;
         this.eventRepository = eventRepository;
+        this.notificationService = notificationService;
+        this.otpService = otpService;
+    }
+
+    public com.itvedant.atmos.DTO.UserResponseDTO mapToResponse(User user) {
+        com.itvedant.atmos.DTO.UserResponseDTO dto = new com.itvedant.atmos.DTO.UserResponseDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+        dto.setPhone(user.getPhone());
+        dto.setOrganizationName(user.getOrganizationName());
+        dto.setPanGstin(user.getPanGstin());
+        dto.setOrganizerStatus(user.getOrganizerStatus());
+        dto.setVerified(user.getVerified());
+        return dto;
     }
 
     public User registerUser(User user) {
@@ -34,7 +54,26 @@ public class UserService {
         if (user.getRole() == null || user.getRole().isBlank()) {
             user.setRole("ROLE_USER");
         }
-        return userRepository.save(Objects.requireNonNull(user));
+        User saved = userRepository.save(Objects.requireNonNull(user));
+        
+        // Generate and send OTP
+        otpService.generateAndSendOTP(saved);
+        
+        return saved;
+    }
+
+    public boolean verifyOtp(Long userId, String otp) {
+        if (userId == null) throw new RuntimeException("User ID must not be null");
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return otpService.verifyOTP(user, otp);
+    }
+
+    public void resendOtp(Long userId) {
+        if (userId == null) throw new RuntimeException("User ID must not be null");
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        otpService.generateAndSendOTP(user);
     }
 
     /** User login */
@@ -74,7 +113,37 @@ public class UserService {
         if (updates.getPassword() != null && !updates.getPassword().isBlank()) {
             existing.setPassword(passwordEncoder.encode(updates.getPassword()));
         }
+        if (updates.getPhone() != null) {
+            existing.setPhone(updates.getPhone());
+        }
+        if (updates.getOrganizationName() != null) {
+            existing.setOrganizationName(updates.getOrganizationName());
+        }
+        if (updates.getPanGstin() != null) {
+            existing.setPanGstin(updates.getPanGstin());
+        }
+        if (updates.getOrganizerStatus() != null) {
+            existing.setOrganizerStatus(updates.getOrganizerStatus());
+        }
         return userRepository.save(Objects.requireNonNull(existing));
+    }
+
+    public User approveOrganizer(Long id) {
+        if (id == null) throw new RuntimeException("ID must not be null");
+        User user = userRepository.findById(Objects.requireNonNull(id))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!"ROLE_ORGANIZER".equals(user.getRole())) {
+            throw new RuntimeException("User is not an organizer");
+        }
+        user.setOrganizerStatus("APPROVED");
+        User saved = userRepository.save(user);
+        
+        // Notify the user
+        notificationService.createNotification(user.getId(), 
+            "Your organizer application has been approved! You can now create events.", 
+            "APPROVAL");
+            
+        return saved;
     }
 
     @org.springframework.transaction.annotation.Transactional
@@ -85,6 +154,6 @@ public class UserService {
         
         eventRepository.deleteByOrganizerId(id);
         
-        userRepository.deleteById(id);
+        userRepository.deleteById(Objects.requireNonNull(id));
     }
 }

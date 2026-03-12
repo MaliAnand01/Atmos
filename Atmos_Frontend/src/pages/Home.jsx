@@ -132,16 +132,16 @@ export default function Home() {
               >
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">Find Your</span>
                 <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-chill-blue via-purple-400 to-energy-pink">Vibe.</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-chill-blue via-purple-400 to-energy-pink">Experience.</span>
               </motion.h1>
-              <motion.p
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.2, ease: "circOut" }}
-                className="text-text-secondary text-base md:text-lg max-w-lg leading-relaxed"
-              >
-                Move the slider to match your mood. Atmos will show you events that match your energy level.
-              </motion.p>
+                <motion.p
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.2, ease: "circOut" }}
+                  className="text-text-secondary text-base md:text-lg max-w-lg leading-relaxed"
+                >
+                  Discover events that match your mood. Use the slider below to filter by energy level.
+                </motion.p>
             </div>
 
             {/* Vibe Slider */}
@@ -212,13 +212,13 @@ export default function Home() {
                     </motion.div>
                   ))}
                   {events.length > 3 && (
-                    <p className="text-center text-text-secondary text-sm pt-1">+{events.length - 3} more events at this frequency</p>
+                    <p className="text-center text-text-secondary text-sm pt-1">+{events.length - 3} more events available</p>
                   )}
                 </motion.div>
               ) : (
                 <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="flex items-center justify-center h-48 bg-clay-surface/40 rounded-3xl border border-white/5">
-                  <p className="text-text-secondary text-sm">Adjust the dial to tune in...</p>
+                  <p className="text-text-secondary text-sm">Adjust the slider to find events...</p>
                 </motion.div>
               )}
             </AnimatePresence>

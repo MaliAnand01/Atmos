@@ -33,15 +33,17 @@ export default function VenuesGrid() {
         <p className="text-text-secondary mt-2 text-lg">The best spaces for any vibe.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-[300px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-auto sm:auto-rows-[300px]">
         {venues.map((venue, index) => {
-          
+          const isLarge = index === 0 || index === 5;
+          const isTall = index === 2 || index === 6;
+
           return (
             <ClayCard 
               key={venue.id}
               onClick={() => handleVenueClick(venue)}
               className={`p-0 relative group cursor-pointer overflow-hidden transform transition-all hover:ring-2 hover:ring-white/20 ${
-                isLarge ? "md:col-span-2 lg:col-span-2 row-span-2" : ""
+                isLarge ? "md:col-span-2 lg:col-span-2 lg:row-span-2" : ""
               } ${isTall ? "lg:row-span-2" : ""}`}
             >
               <img 

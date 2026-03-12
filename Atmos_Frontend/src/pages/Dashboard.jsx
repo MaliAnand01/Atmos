@@ -20,10 +20,10 @@ export default function Dashboard() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="bg-void min-h-screen font-body text-text-primary pb-32 pt-24"
+            className="bg-void min-h-screen font-body text-text-primary pb-32 pt-24 md:pb-32"
         >
             <div className="max-w-7xl mx-auto px-6 md:px-12">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4 md:gap-6">
                     <div>
                         <h1 className="text-4xl md:text-5xl font-display font-bold mb-2">Dashboard</h1>
                         <p className="text-text-secondary">
@@ -31,7 +31,7 @@ export default function Dashboard() {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <div className="bg-clay-surface p-1 rounded-full border border-white/5 flex mr-4">
                             <button 
                                 onClick={() => setActiveTab("overview")}

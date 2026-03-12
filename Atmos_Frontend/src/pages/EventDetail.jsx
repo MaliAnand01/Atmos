@@ -81,7 +81,7 @@ export default function EventDetail() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="bg-void min-h-screen font-body text-text-primary"
+      className="bg-void min-h-screen font-body text-text-primary pb-28 md:pb-0"
     >
       {/* Hero Image */}
       <div className="w-full h-[55vh] md:h-[70vh] relative overflow-hidden">
@@ -153,7 +153,7 @@ export default function EventDetail() {
           {/* Info grid */}
           <motion.div
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
           >
             {[
               { icon: <MapPin size={22} weight="duotone" className="text-chill-blue" />, label: "Venue", value: event.venue?.name },
@@ -292,7 +292,7 @@ export default function EventDetail() {
       </div>
 
       {/* Mobile CTA */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-clay-surface/95 backdrop-blur-xl p-4 border-t border-white/10 z-40 flex items-center justify-between">
+      <div className="lg:hidden fixed bottom-24 left-0 right-0 bg-clay-surface/95 backdrop-blur-xl p-4 border-t border-white/10 z-[60] flex items-center justify-between">
         <div>
           <p className="text-text-secondary text-[10px] uppercase tracking-wider">Entry</p>
           <p className="text-xl font-bold font-display">₹{event.price ?? 499}</p>

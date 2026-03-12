@@ -76,10 +76,10 @@ export default function Discover() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.4 }}
-      className="bg-void min-h-screen pt-32 text-text-primary flex flex-col"
+      className="bg-void min-h-screen pt-32 text-text-primary flex flex-col pb-28 md:pb-0"
     >
       <div className="max-w-7xl mx-auto px-6 w-full flex-grow mb-24">
-        <h1 className="text-5xl md:text-7xl font-display font-bold mb-4 drop-shadow-sm text-transparent bg-clip-text bg-gradient-to-b from-white to-text-secondary/50">
+        <h1 className="text-4xl md:text-7xl font-display font-bold mb-4 drop-shadow-sm text-transparent bg-clip-text bg-gradient-to-b from-white to-text-secondary/50">
           Discover
         </h1>
         <p className="text-text-secondary text-lg max-w-2xl mb-12">
@@ -101,7 +101,10 @@ export default function Discover() {
         </div>
 
         {/* Categories Carousel */}
-        <div className="flex overflow-x-auto gap-3 pb-4 mb-8 scrollbar-hide">
+        <div 
+          className="flex overflow-x-auto gap-3 pb-4 mb-8"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
              {allCategories.map(category => (
                 <button 
                   key={category}

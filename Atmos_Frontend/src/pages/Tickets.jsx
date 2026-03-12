@@ -34,10 +34,10 @@ export default function Tickets() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.4 }}
-      className="bg-void min-h-screen pt-32 text-text-primary flex flex-col"
+      className="bg-void min-h-screen pt-32 text-text-primary flex flex-col pb-28 md:pb-0"
     >
       <div className="max-w-4xl mx-auto px-6 w-full flex-grow">
-        <h1 className="text-5xl md:text-6xl font-display font-bold mb-4">Your Tickets</h1>
+        <h1 className="text-4xl md:text-6xl font-display font-bold mb-4">Your Tickets</h1>
         <p className="text-text-secondary text-lg mb-12">Manage your upcoming RSVPs and access passes.</p>
         
         <div className="flex flex-col gap-8 mb-24">
@@ -94,7 +94,7 @@ export default function Tickets() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center md:pl-6 md:border-l border-white/5">
+                    <div className="flex items-center border-t border-white/5 pt-4 mt-2 md:pt-0 md:mt-0 md:pl-6 md:border-t-0 md:border-l">
                       <Link to={`/event/${event.id}`}>
                         <ClayButton variant="secondary" className="w-full md:w-auto mt-4 md:mt-0">
                           View Event

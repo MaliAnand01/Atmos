@@ -1,17 +1,21 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import VibeSlider from "../components/VibeSlider";
 import HorizontalScrollFeed from "../components/HorizontalScrollFeed";
 import VenuesGrid from "../components/VenuesGrid";
 import Footer from "../components/Footer";
 import { api, getImageUrl } from "../services/api";
 
+gsap.registerPlugin(ScrollTrigger);
+
 export default function Home() {
-  const [targetVibe, setTargetVibe] = useState(7);
+  const [targetVibe, setTargetVibe] = useState(5);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [siteStats, setSiteStats] = useState({ events: 0, venues: 0, bookings: 0 });
+  const venuesSectionRef = useRef(null);
 
   const fetchEventsByVibe = useCallback(async (level) => {
     try {
@@ -27,10 +31,39 @@ export default function Home() {
 
   // Load initial events
   useEffect(() => {
-    fetchEventsByVibe(7);
+    fetchEventsByVibe(targetVibe);
     // Fetch live site stats for hero section
     api.get('/stats').then(data => setSiteStats(data)).catch(() => {});
   }, [fetchEventsByVibe]);
+
+  // Venues parallax slide-up — desktop only
+  useEffect(() => {
+    const section = venuesSectionRef.current;
+    if (!section) return;
+    if (window.innerWidth < 768) return; // only on desktop
+
+    // Start slightly below its natural position, ease into place as user scrolls
+    gsap.fromTo(
+      section,
+      { y: 120 },
+      {
+        y: 0,
+        ease: "none",
+        scrollTrigger: {
+          trigger: section,
+          start: "top 85%",
+          end: "top 20%",
+          scrub: 1.2,
+          invalidateOnRefresh: true,
+        },
+      }
+    );
+    return () => {
+      ScrollTrigger.getAll()
+        .filter(st => st.trigger === section)
+        .forEach(t => t.kill());
+    };
+  }, []);
 
   const handleVibeChange = useCallback((vibeLevel) => {
     setTargetVibe(vibeLevel);
@@ -59,10 +92,10 @@ export default function Home() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-void min-h-screen font-body text-text-primary overflow-x-hidden" 
+      className="bg-void min-h-screen font-body text-text-primary overflow-x-hidden pb-28 md:pb-0 pt-10 md:pt-0" 
     >
       {/* Hero Section */}
-      <section className="relative w-full min-h-[90vh] flex flex-col justify-center overflow-hidden z-20 pt-24 pb-16">
+      <section className="relative w-full min-h-[90vh] flex flex-col justify-center overflow-hidden z-20 pt-24 pb-28 md:pb-16">
         
         {/* Animated ambient background */}
         <div className="hero-bg-overlay absolute inset-0 z-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,240,255,0.06) 0%, rgba(13,15,20,1) 70%)" }} />
@@ -122,7 +155,7 @@ export default function Home() {
 
             {/* Stats row — real data from /api/stats */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-              className="flex items-center gap-8 pt-2">
+              className="flex items-center gap-6 sm:gap-8 pt-2 flex-wrap">
               {[
                 [siteStats.events  >= 0 ? `${siteStats.events}+` : "…",   "Active Events"],
                 [siteStats.venues  >= 0 ? `${siteStats.venues}+` : "…",   "Venues"],
@@ -194,7 +227,7 @@ export default function Home() {
 
         {/* Scroll hint */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-text-secondary/40 z-10">
+          className="hidden md:flex absolute bottom-6 left-1/2 -translate-x-1/2 flex-col items-center gap-2 text-text-secondary/40 z-10">
           <span className="text-[10px] uppercase tracking-[0.3em]">Scroll to Explore</span>
           <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
             className="w-px h-8 bg-gradient-to-b from-white/30 to-transparent" />
@@ -206,8 +239,11 @@ export default function Home() {
         <HorizontalScrollFeed events={events} />
       </div>
 
-      {/* Featured Venues */}
-      <section className="relative z-30 bg-clay-surface pt-24 pb-32 rounded-t-[5rem] shadow-[0_-80px_100px_rgba(0,0,0,1)] border-t border-white/10">
+      {/* Featured Venues — slides up over the horizontal feed on desktop */}
+      <section
+        ref={venuesSectionRef}
+        className="relative z-30 bg-clay-surface pt-20 md:pt-24 pb-32 rounded-t-[5rem] shadow-[0_-80px_100px_rgba(0,0,0,1)] border-t border-white/10"
+      >
          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-1.5 bg-white/10 rounded-full mt-10" />
          <VenuesGrid />
       </section>

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
-import { MagnifyingGlass, Funnel, MapPin, Heart } from "@phosphor-icons/react";
+import { Search, Filter, MapPin, Heart } from "lucide-react";
 import { getUser } from "../services/authStore";
 import ClayCard from "../components/ClayCard";
 import ClayButton from "../components/ClayButton";
@@ -130,7 +130,7 @@ export default function Discover() {
         {/* Search & Filter Bar */}
         <div className="flex flex-col md:flex-row gap-4 mb-12">
           <div className="relative flex-grow">
-            <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
             <input 
               {...register("searchQuery")}
               type="text" 
@@ -151,7 +151,7 @@ export default function Discover() {
                   onClick={() => { setActiveCategory(category); setValue("searchQuery", ""); }}
                   className={`px-6 py-2 rounded-full whitespace-nowrap transition-all duration-300 font-medium text-sm ${
                     activeCategory === category 
-                      ? "bg-text-primary text-void shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                      ? "bg-text-primary text-void shadow-clay scale-105"
                       : "bg-clay-surface border border-white/5 text-text-secondary hover:text-text-primary hover:border-white/20"
                   }`}
                 >
@@ -180,27 +180,32 @@ export default function Discover() {
                             alt={evt.title} 
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
-                        <div className="absolute top-4 right-4 flex gap-2">
+                         <div className="absolute inset-0 bg-gradient-to-t from-void to-transparent opacity-80" />
+
+                         <div className="absolute top-4 right-4 flex gap-2 z-10">
                            <button 
-                             onClick={(e) => { e.preventDefault(); toggleWishlist(evt.id); }}
-                             className={`p-2 rounded-full backdrop-blur-md border transition-all ${
-                               isInWishlist(evt.id) 
-                                 ? "bg-energy-pink border-energy-pink text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]" 
+                             onClick={(e) => { 
+                               e.preventDefault(); 
+                               e.stopPropagation(); 
+                               toggleWishlist(evt.id); 
+                             }}
+                             className={`p-2 rounded-full backdrop-blur-md border transition-all duration-300 ${
+                                isInWishlist(evt.id) 
+                                 ? "bg-energy-pink border-energy-pink/30 text-white shadow-clay scale-110" 
                                  : "bg-void/60 border-white/10 text-white hover:border-energy-pink/50"
                              }`}
                            >
-                              <Heart size={16} weight={isInWishlist(evt.id) ? "fill" : "regular"} />
+                              <Heart size={16} fill={isInWishlist(evt.id) ? "currentColor" : "none"} />
                            </button>
-                           <div className="bg-void/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold border border-white/10 text-energy-pink">
-                              Energy Level {evt.energyLevel}
+                           <div className="bg-void/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold border border-white/10 text-text-secondary uppercase tracking-tighter flex items-center justify-center leading-none">
+                              Level {evt.energyLevel}
                            </div>
                         </div>
                         {evt.category && (
-                          <div className="absolute top-4 left-4 bg-chill-blue/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold border border-chill-blue/30 text-chill-blue">
+                          <div className="absolute top-4 left-4 bg-chill-blue/10 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold border border-chill-blue/20 text-chill-blue uppercase tracking-tighter z-10 flex items-center justify-center leading-none">
                             {evt.category}
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-void to-transparent opacity-80" />
                       </div>
                       
                       <div className="p-6 flex flex-col flex-grow">

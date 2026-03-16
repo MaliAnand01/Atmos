@@ -27,6 +27,12 @@ public class BookingService {
         return bookingRepository.findByUserId(userId);
     }
 
+    public List<Booking> getOrganizerBookings(Long organizerId) {
+        if (organizerId == null)
+            return List.of();
+        return bookingRepository.findByEventOrganizerId(organizerId);
+    }
+
     /** Cancel a booking and restore event capacity */
     @Transactional
     public void cancelBooking(Long bookingId) {

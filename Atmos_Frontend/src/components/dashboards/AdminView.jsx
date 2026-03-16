@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import ClayCard from "../ClayCard";
-import { Users, Calendar, MapTrifold, ShieldCheck, Trash, Plus, Pencil } from "@phosphor-icons/react";
+import { Users, Calendar, Map, ShieldCheck, Trash2, Plus, Pencil } from "lucide-react";
 import { api } from "../../services/api";
 import { getUser } from "../../services/authStore";
 import ClayButton from "../ClayButton";
@@ -146,7 +146,7 @@ export default function AdminView() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-energy-pink/10 rounded-2xl text-energy-pink">
-                        <ShieldCheck size={32} weight="fill" />
+                        <ShieldCheck size={32} />
                     </div>
                     <div>
                         <h2 className="text-3xl font-display font-bold">Admin Panel</h2>
@@ -158,9 +158,9 @@ export default function AdminView() {
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                    { icon: <Users size={32} weight="duotone" />, label: "Total Users", val: stats.users, color: "text-chill-blue" },
-                    { icon: <Calendar size={32} weight="duotone" />, label: "Total Events", val: stats.events, color: "text-energy-pink" },
-                    { icon: <MapTrifold size={32} weight="duotone" />, label: "Total Venues", val: stats.venues, color: "text-white" }
+                    { icon: <Users size={32} />, label: "Total Users", val: stats.users, color: "text-chill-blue" },
+                    { icon: <Calendar size={32} />, label: "Total Events", val: stats.events, color: "text-energy-pink" },
+                    { icon: <Map size={32} />, label: "Total Venues", val: stats.venues, color: "text-white" }
                 ].map((stat, i) => (
                     <ClayCard key={i} className="flex flex-col items-center justify-center p-8 text-center shadow-clay border border-white/5 bg-void/20">
                         <div className={`mb-4 ${stat.color} drop-shadow-[0_0_8px_currentColor]`}>{stat.icon}</div>
@@ -171,11 +171,11 @@ export default function AdminView() {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex gap-4 p-1 bg-void rounded-2xl border border-white/5 w-fit">
-                <button onClick={() => setActiveTab("directory")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'directory' ? 'bg-chill-blue text-void' : 'text-text-secondary hover:text-white'}`}>Users</button>
-                <button onClick={() => setActiveTab("pending")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'pending' ? 'bg-energy-orange text-white' : 'text-text-secondary hover:text-white'}`}>Pending Organizers</button>
-                <button onClick={() => setActiveTab("events")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'events' ? 'bg-energy-pink text-white' : 'text-text-secondary hover:text-white'}`}>Events</button>
-                <button onClick={() => setActiveTab("venues")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'venues' ? 'bg-white text-void' : 'text-text-secondary hover:text-white'}`}>Venues</button>
+            <div className="flex gap-4 p-1 bg-void rounded-2xl border border-white/5 w-full overflow-x-auto scrollbar-hide flex-nowrap shrink-0 max-w-full">
+                <button onClick={() => setActiveTab("directory")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'directory' ? 'bg-chill-blue text-void' : 'text-text-secondary hover:text-white'}`}>Users</button>
+                <button onClick={() => setActiveTab("pending")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'pending' ? 'bg-energy-orange text-white' : 'text-text-secondary hover:text-white'}`}>Pending Organizers</button>
+                <button onClick={() => setActiveTab("events")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'events' ? 'bg-energy-pink text-white' : 'text-text-secondary hover:text-white'}`}>Events</button>
+                <button onClick={() => setActiveTab("venues")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'venues' ? 'bg-white text-void' : 'text-text-secondary hover:text-white'}`}>Venues</button>
             </div>
 
             <AnimatePresence mode="wait">
@@ -201,7 +201,7 @@ export default function AdminView() {
                                             <button onClick={() => handleApproveOrganizer(user.id)} className="p-2 text-chill-blue hover:scale-110 transition-transform" title="Approve"><ShieldCheck size={18} /></button>
                                         )}
                                         {user.id !== currentUser?.id && (
-                                            <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-text-secondary hover:text-energy-pink opacity-0 group-hover:opacity-100 transition-all"><Trash size={18} /></button>
+                                            <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-text-secondary hover:text-energy-pink md:opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={18} /></button>
                                         )}
                                     </div>
                                 </ClayCard>
@@ -256,7 +256,7 @@ export default function AdminView() {
                                                 </div>
                                             </div>
                                             <div className="p-4 bg-energy-orange/10 rounded-3xl text-energy-orange">
-                                                <Users size={32} weight="duotone" />
+                                                <Users size={32} />
                                             </div>
                                         </div>
                                     </ClayCard>
@@ -309,9 +309,9 @@ export default function AdminView() {
                                     <div className="h-32 bg-void relative">
                                         {venue.imageUrl && <img src={venue.imageUrl} className="w-full h-full object-cover opacity-60" />}
                                         <div className="absolute inset-0 bg-gradient-to-t from-void to-transparent" />
-                                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                            <button onClick={() => handleEditVenue(venue)} className="p-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all"><Pencil size={16} /></button>
-                                            <button onClick={() => handleDeleteVenue(venue.id)} className="p-2 bg-energy-pink/20 text-energy-pink rounded-lg hover:bg-energy-pink hover:text-white transition-all"><Trash size={16} /></button>
+                                        <div className="absolute top-2 right-2 flex gap-2 md:opacity-0 group-hover:opacity-100 transition-all">
+                                            <button onClick={() => handleEditVenue(venue)} className="p-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all backdrop-blur-md border border-white/10"><Pencil size={16} /></button>
+                                            <button onClick={() => handleDeleteVenue(venue.id)} className="p-2 bg-energy-pink/20 text-energy-pink rounded-lg hover:bg-energy-pink hover:text-white transition-all backdrop-blur-md border border-energy-pink/10"><Trash2 size={16} /></button>
                                         </div>
                                     </div>
                                     <div className="p-4">
@@ -337,7 +337,7 @@ export default function AdminView() {
                                         <p className="text-[10px] text-text-secondary uppercase font-bold mt-1">Energy Level: {event.energyLevel} | By: {event.organizerId || 'Atmos'}</p>
                                     </div>
                                     <div className="flex gap-2">
-                                       <button onClick={() => handleDeleteEvent(event.id)} className="w-8 h-8 rounded-full bg-void flex items-center justify-center text-text-secondary/50 border border-white/5 hover:bg-energy-pink/20 hover:text-energy-pink transition-all"><Trash size={14} /></button>
+                                       <button onClick={() => handleDeleteEvent(event.id)} className="w-8 h-8 rounded-full bg-void flex items-center justify-center text-text-secondary/50 border border-white/5 hover:bg-energy-pink/20 hover:text-energy-pink transition-all"><Trash2 size={14} /></button>
                                     </div>
                                 </ClayCard>
                             ))}

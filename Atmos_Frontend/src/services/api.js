@@ -1,87 +1,67 @@
-// Atmos API Service
+import axios from 'axios';
+
 const API_BASE_URL = 'http://localhost:8080/api';
 
+// Create a centralized axios instance
+const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Request Interceptor: Pass auth tokens automatically
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('atmos_token');
+  const userStr = localStorage.getItem('atmos_user');
+  
+  if (token) {
+    config.headers['Authorization'] = `Basic ${token}`;
+  }
+
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (user.id) config.headers['X-User-Id'] = user.id.toString();
+      if (user.role) config.headers['X-User-Role'] = user.role;
+    } catch (e) {
+      console.error("Failed to parse user for headers", e);
+    }
+  }
+
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+// Response Interceptor: Centralized error handling
+axiosInstance.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    const message = error.response?.data?.error || error.message || "An unexpected error occurred";
+    return Promise.reject(new Error(message));
+  }
+);
 
 class ApiService {
-  constructor() {
-    this.baseURL = API_BASE_URL;
-  }
-
-  /** Public headers */
-  getPublicHeaders() {
-    return { 'Content-Type': 'application/json' };
-  }
-
-  /** Auth and identity headers */
-  getAuthHeaders() {
-    const headers = { 'Content-Type': 'application/json' };
-    const token = localStorage.getItem('atmos_token');
-    const userStr = localStorage.getItem('atmos_user');
-    const user = userStr ? JSON.parse(userStr) : {};
-
-    if (token) {
-      headers['Authorization'] = `Basic ${token}`;
-    }
-    if (user.id) {
-      headers['X-User-Id'] = user.id.toString();
-    }
-    if (user.role) {
-      headers['X-User-Role'] = user.role;
-    }
-    return headers;
-  }
-
   /** GET request */
-  async get(endpoint, authenticated = false) {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'GET',
-      headers: authenticated ? this.getAuthHeaders() : this.getPublicHeaders()
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || `HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
+  async get(endpoint) {
+    return axiosInstance.get(endpoint);
   }
 
+  /** POST request */
   async post(endpoint, data) {
-    const usePublic = endpoint.includes('/auth/login') || endpoint.includes('/auth/register');
-    
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'POST',
-      headers: usePublic ? this.getPublicHeaders() : this.getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || `HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
+    return axiosInstance.post(endpoint, data);
   }
 
+  /** PUT request */
   async put(endpoint, data) {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'PUT',
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || `HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
+    return axiosInstance.put(endpoint, data);
   }
 
+  /** DELETE request */
   async delete(endpoint) {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'DELETE',
-      headers: this.getAuthHeaders()
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || `HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
+    return axiosInstance.delete(endpoint);
   }
 
   /** Multi-part file upload */
@@ -89,23 +69,12 @@ class ApiService {
     const formData = new FormData();
     formData.append('file', file);
 
-    const headers = {};
-    const token = localStorage.getItem('atmos_token');
-    if (token) {
-      headers['Authorization'] = `Basic ${token}`;
-    }
-
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'POST',
-      headers: headers,
-      body: formData
+    // Axios handles Multipart headers automatically when receiving FormData
+    return axiosInstance.post(endpoint, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     });
-    
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || `Upload error! status: ${response.status}`);
-    }
-    return await response.json();
   }
 }
 
@@ -117,3 +86,4 @@ export const getImageUrl = (url) => {
 };
 
 export const api = new ApiService();
+export default axiosInstance;

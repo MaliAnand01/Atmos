@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SignOut, ChartBar, Gear } from "@phosphor-icons/react";
+import { useNavigate } from "react-router-dom";
+import { useUI } from "../context/UIContext";
+import toast from "react-hot-toast";
+import { LogOut, BarChart3, Settings } from "lucide-react";
 import AttendeeView from "../components/dashboards/AttendeeView";
 import OrganizerView from "../components/dashboards/OrganizerView";
 import AdminView from "../components/dashboards/AdminView";
@@ -8,9 +11,18 @@ import SettingsView from "../components/dashboards/SettingsView";
 import { getRole, getUser, logout } from "../services/authStore";
 
 export default function Dashboard() {
+    const { dispatch } = useUI();
+    const navigate = useNavigate();
     const [role, setRole] = useState(getRole() || "ROLE_USER");
     const [activeTab, setActiveTab] = useState("overview");
     const user = getUser();
+
+    const handleLogout = () => {
+        logout();
+        dispatch({ type: 'LOGOUT' });
+        navigate('/');
+        toast.success("Logged out successfully");
+    };
 
     const viewKey = role === "ROLE_ADMIN" ? "admin" : 
                    role === "ROLE_ORGANIZER" ? "organizer" : "attendee";
@@ -39,7 +51,7 @@ export default function Dashboard() {
                                     activeTab === "overview" ? "bg-white text-void shadow-clay" : "text-text-secondary hover:text-white"
                                 }`}
                             >
-                                <ChartBar size={16} />
+                                <BarChart3 size={16} />
                                 Overview
                             </button>
                             <button 
@@ -48,16 +60,16 @@ export default function Dashboard() {
                                     activeTab === "settings" ? "bg-white text-void shadow-clay" : "text-text-secondary hover:text-white"
                                 }`}
                             >
-                                <Gear size={16} />
+                                <Settings size={16} />
                                 Settings
                             </button>
                         </div>
 
                         <button 
-                            onClick={logout}
+                            onClick={handleLogout}
                             className="flex items-center gap-2 px-6 py-3 rounded-full bg-clay-surface border border-white/5 text-text-secondary hover:text-energy-pink hover:border-energy-pink/30 hover:shadow-[0_0_20px_rgba(255,0,127,0.1)] transition-all group"
                         >
-                            <SignOut size={20} className="group-hover:rotate-12 transition-transform" />
+                            <LogOut size={20} className="group-hover:rotate-12 transition-transform" />
                             <span className="text-sm font-bold uppercase tracking-widest">Logout</span>
                         </button>
                     </div>

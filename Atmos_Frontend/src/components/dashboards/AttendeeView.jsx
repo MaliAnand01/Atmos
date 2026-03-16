@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import ClayCard from "../ClayCard";
-import { Ticket, ClockClockwise, MapPin, Heart, Users } from "@phosphor-icons/react";
+import { Ticket, History, MapPin, Heart, Users } from "lucide-react";
 import { api, getImageUrl } from "../../services/api";
 import { getUser } from "../../services/authStore";
 import { Link } from "react-router-dom";
@@ -153,7 +153,7 @@ export default function AttendeeView() {
                                                 onClick={(e) => handleRemoveWishlist(e, event.id)}
                                                 className="p-1 hover:text-energy-pink transition-colors"
                                             >
-                                                <Heart size={16} weight="fill" className="text-energy-pink" />
+                                                <Heart size={16} fill="currentColor" className="text-energy-pink" />
                                             </button>
                                         </div>
                                         <div className="flex items-center gap-2 text-[11px] text-text-secondary mt-1">
@@ -183,7 +183,7 @@ export default function AttendeeView() {
                 <h2 className="text-3xl font-display font-bold mb-8">Activity History</h2>
                 <ClayCard className="p-8">
                     <div className="flex items-center justify-between mb-8 text-text-secondary">
-                        <span className="flex items-center gap-2"><ClockClockwise size={20} /> Last 30 Days</span>
+                        <span className="flex items-center gap-2"><History size={20} /> Last 30 Days</span>
                         <span>{activeBookings.length > 0 ? dominantLabel : "No bookings yet"}</span>
                     </div>
                     

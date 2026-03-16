@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Warning, ArrowsClockwise } from '@phosphor-icons/react';
+import { AlertTriangle, RefreshCcw } from "lucide-react";
 import ClayButton from './ClayButton';
 
 class ErrorBoundary extends React.Component {
@@ -34,7 +34,7 @@ class ErrorBoundary extends React.Component {
             <div className="absolute top-0 right-0 w-32 h-32 bg-energy-pink/10 rounded-bl-full -z-10" />
             
             <div className="w-20 h-20 bg-energy-pink/20 rounded-full flex items-center justify-center text-energy-pink mx-auto mb-6 shadow-[0_0_30px_rgba(255,0,127,0.2)]">
-                <Warning size={48} weight="fill" />
+                <AlertTriangle size={48} />
             </div>
             
             <h1 className="text-3xl font-display font-bold text-white mb-2">Resonance Disrupted</h1>
@@ -53,7 +53,7 @@ class ErrorBoundary extends React.Component {
                 onClick={this.handleReset}
                 className="w-full bg-chill-blue text-void font-bold flex items-center justify-center gap-2 py-4 rounded-xl"
             >
-                <ArrowsClockwise size={20} weight="bold" />
+                <RefreshCcw size={20} />
                 Return to Singularity
             </ClayButton>
           </motion.div>

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, CheckCircle, Warning, CreditCard, SpinnerGap, IdentificationCard, Calendar, Lock } from "@phosphor-icons/react";
+import { X, CheckCircle2, AlertTriangle, CreditCard, Loader2, IdCard, Calendar, Lock } from "lucide-react";
 import ClayButton from "./ClayButton";
 import { useState, useEffect, useRef } from "react";
 import { api } from "../services/api";
@@ -104,6 +104,7 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
   const handleClose = () => {
     setStep(1);
     setErrorMsg("");
+    navigate("/tickets")
     onClose();
   };
 
@@ -177,7 +178,7 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
 
                         <form onSubmit={handleSubmit(onPaymentSubmit)} className="space-y-4">
                             <div className="relative">
-                                <IdentificationCard className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
+                                <IdCard className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
                                 <input
                                     {...register("cardNumber")}
                                     placeholder="4242 4242 4242 4242"
@@ -233,7 +234,9 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
                     <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center justify-center gap-8 py-10">
                         <div className="relative w-24 h-24">
                             <div className="absolute inset-0 rounded-full border-4 border-chill-blue/10" />
-                            <div ref={spinnerRef} className="absolute inset-0 rounded-full border-4 border-chill-blue border-t-transparent shadow-[0_0_30px_rgba(0,240,255,0.3)]" />
+                            <div ref={spinnerRef} className="absolute inset-0 rounded-full border-4 border-chill-blue border-t-transparent shadow-[0_0_30px_rgba(0,240,255,0.3)] flex items-center justify-center">
+                                <Loader2 size={40} className="text-chill-blue animate-spin" />
+                            </div>
                         </div>
                         <div className="text-center">
                             <h2 className="text-2xl font-display font-bold text-white mb-2 tracking-wide">Processing Payment</h2>
@@ -245,7 +248,7 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
                 {step === 4 && (
                     <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center text-center gap-6 py-4">
                         <div className="w-20 h-20 bg-chill-blue/20 rounded-full flex items-center justify-center text-chill-blue mb-2 shadow-[0_0_40px_rgba(0,240,255,0.4)]">
-                            <CheckCircle size={48} weight="fill" />
+                            <CheckCircle2 size={48} className="text-chill-blue" />
                         </div>
                         <div>
                             <h2 className="text-3xl font-display font-bold text-white mb-2 uppercase tracking-tight">Booking Confirmed</h2>
@@ -260,7 +263,7 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
                 {step === 5 && (
                     <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center text-center gap-6 py-4">
                         <div className="w-20 h-20 bg-energy-pink/20 rounded-full flex items-center justify-center text-energy-pink mb-2 shadow-[0_0_30px_rgba(255,0,127,0.3)]">
-                            <Warning size={48} weight="fill" />
+                            <AlertTriangle size={48} className="text-energy-pink" />
                         </div>
                         <h2 className="text-3xl font-display font-bold text-white uppercase tracking-tight">Payment Failed</h2>
                         <p className="text-text-secondary text-sm">{errorMsg}</p>

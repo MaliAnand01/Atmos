@@ -136,6 +136,10 @@ public class EventService {
         if (updates.getPrice() != null) event.setPrice(updates.getPrice());
         if (updates.getVenue() != null) event.setVenue(updates.getVenue());
         if (updates.getCategory() != null) event.setCategory(updates.getCategory());
+        if (updates.getTagline() != null) event.setTagline(updates.getTagline());
+        if (updates.getAgeLimit() != null) event.setAgeLimit(updates.getAgeLimit());
+        if (updates.getDressCode() != null) event.setDressCode(updates.getDressCode());
+        if (updates.getDoorPolicy() != null) event.setDoorPolicy(updates.getDoorPolicy());
         if (updates.getActive() != null) event.setActive(updates.getActive());
         
         return eventRepository.save(Objects.requireNonNull(event));

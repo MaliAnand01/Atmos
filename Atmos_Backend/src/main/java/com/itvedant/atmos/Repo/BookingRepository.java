@@ -6,6 +6,8 @@ import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByUserId(Long userId);
+    List<Booking> findByEventOrganizerId(Long organizerId);
     void deleteByUserId(Long userId);
     java.util.Optional<Booking> findByRazorpayPaymentId(String rzpOrderId);
+    void deleteByEventId(Long eventId);
 }

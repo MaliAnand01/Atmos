@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { MapPin, Ticket, CalendarBlank, ShieldCheck } from "@phosphor-icons/react";
+import { MapPin, Ticket, Calendar, ShieldCheck } from "lucide-react";
 import ClayCard from "../components/ClayCard";
 import ClayButton from "../components/ClayButton";
 import Footer from "../components/Footer";
@@ -80,7 +80,7 @@ export default function Tickets() {
                     <div className="flex flex-col justify-center flex-grow">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-2xl font-display font-bold text-white">{event.title}</h3>
-                        <ShieldCheck size={18} className="text-chill-blue" weight="fill" />
+                        <ShieldCheck size={18} className="text-chill-blue" />
                       </div>
                       <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase mb-4">
                         <span className="text-chill-blue">General Admission</span>
@@ -90,7 +90,7 @@ export default function Tickets() {
                       
                       <div className="flex flex-wrap gap-x-6 gap-y-2 text-text-secondary text-sm">
                         <div className="flex items-center gap-2">
-                          <CalendarBlank size={14} className="text-chill-blue" />
+                          <Calendar size={14} className="text-chill-blue" />
                           <span className="font-medium text-white">{dateStr} at {timeStr}</span>
                         </div>
                         <div className="flex items-center gap-2">

@@ -1,21 +1,31 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import VibeSlider from "../components/VibeSlider";
-import HorizontalScrollFeed from "../components/HorizontalScrollFeed";
+import EventFeatureCarousel from "../components/EventFeatureCarousel";
 import VenuesGrid from "../components/VenuesGrid";
 import Footer from "../components/Footer";
 import { api, getImageUrl } from "../services/api";
+import { useUI } from "../context/UIContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Memoized sections to prevent unnecessary re-renders
+const MemoizedEventCarousel = memo(EventFeatureCarousel);
+const MemoizedVenuesGrid = memo(VenuesGrid);
+const MemoizedFooter = memo(Footer);
+
 export default function Home() {
-  const [targetVibe, setTargetVibe] = useState(5);
+  const { state, dispatch } = useUI();
+  const { vibeLevel } = state;
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [siteStats, setSiteStats] = useState({ events: 0, venues: 0, bookings: 0 });
+  
+  const containerRef = useRef(null);
   const venuesSectionRef = useRef(null);
+  const orbsRef = useRef(null);
 
   const fetchEventsByVibe = useCallback(async (level) => {
     try {
@@ -29,45 +39,42 @@ export default function Home() {
     }
   }, []);
 
-  // Load initial events
+  // Sync state initially
   useEffect(() => {
-    fetchEventsByVibe(targetVibe);
-    // Fetch live site stats for hero section
+    fetchEventsByVibe(vibeLevel);
     api.get('/stats').then(data => setSiteStats(data)).catch(() => {});
-  }, [fetchEventsByVibe]);
+  }, [fetchEventsByVibe, vibeLevel]);
 
-  // Venues parallax slide-up — desktop only
+  // Performance Optimized Animations
   useEffect(() => {
-    const section = venuesSectionRef.current;
-    if (!section) return;
-    if (window.innerWidth < 768) return; // only on desktop
+    const ctx = gsap.context(() => {
+      // 1. Orbs Infinite GPU Animation
+      gsap.to(".orb-1", { x: "20%", y: "15%", duration: 25, repeat: -1, yoyo: true, ease: "sine.inOut" });
+      gsap.to(".orb-2", { x: "-20%", y: "-15%", duration: 30, repeat: -1, yoyo: true, ease: "sine.inOut" });
+      gsap.to(".orb-3", { scale: 1.2, duration: 10, repeat: -1, yoyo: true, ease: "power1.inOut" });
 
-    // Start slightly below its natural position, ease into place as user scrolls
-    gsap.fromTo(
-      section,
-      { y: 120 },
-      {
-        y: 0,
-        ease: "none",
-        scrollTrigger: {
-          trigger: section,
-          start: "top 85%",
-          end: "top 20%",
-          scrub: 1.2,
-          invalidateOnRefresh: true,
-        },
+      // 2. Venues Parallax
+      if (window.innerWidth >= 768 && venuesSectionRef.current) {
+        gsap.fromTo(venuesSectionRef.current,
+          { y: 120 },
+          {
+            y: 0,
+            scrollTrigger: {
+              trigger: venuesSectionRef.current,
+              start: "top 85%",
+              end: "top 20%",
+              scrub: 1.2,
+            }
+          }
+        );
       }
-    );
-    return () => {
-      ScrollTrigger.getAll()
-        .filter(st => st.trigger === section)
-        .forEach(t => t.kill());
-    };
+    }, containerRef);
+    
+    return () => ctx.revert();
   }, []);
 
-  const handleVibeChange = useCallback((vibeLevel) => {
-    setTargetVibe(vibeLevel);
-    fetchEventsByVibe(vibeLevel);
+  const handleVibeChange = useCallback((level) => {
+    dispatch({ type: 'SET_VIBE', payload: level });
     
     const colorStops = {
       chill: "radial-gradient(circle at center, rgba(0,240,255,0.08) 0%, rgba(13,15,20,1) 70%)",
@@ -76,45 +83,33 @@ export default function Home() {
     };
     
     let targetGrad = colorStops.balanced;
-    if(vibeLevel <= 3) targetGrad = colorStops.chill;
-    if(vibeLevel >= 8) targetGrad = colorStops.energy;
+    if(level <= 3) targetGrad = colorStops.chill;
+    if(level >= 8) targetGrad = colorStops.energy;
 
     gsap.to(".hero-bg-overlay", {
         background: targetGrad,
         duration: 1.5,
         ease: "power2.inOut"
     });
-  }, [fetchEventsByVibe]);
+  }, [dispatch]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-void min-h-screen font-body text-text-primary overflow-x-hidden pb-28 md:pb-0 pt-10 md:pt-0" 
-    >
+    <div ref={containerRef} className="bg-void min-h-screen font-body text-text-primary overflow-x-hidden pb-28 md:pb-0 pt-10 md:pt-0">
       {/* Hero Section */}
       <section className="relative w-full min-h-[90vh] flex flex-col justify-center overflow-hidden z-20 pt-24 pb-28 md:pb-16">
-        
-        {/* Animated ambient background */}
         <div className="hero-bg-overlay absolute inset-0 z-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,240,255,0.06) 0%, rgba(13,15,20,1) 70%)" }} />
         
-        {/* Floating orbs */}
-        <motion.div animate={{ y: [-20, 20, -20], rotate: 360 }} transition={{ duration: 18, repeat: Infinity, ease: "linear" }} className="absolute top-[10%] right-[5%] w-[28vw] h-[28vw] rounded-full bg-gradient-to-br from-chill-blue/10 to-transparent blur-[80px] pointer-events-none" />
-        <motion.div animate={{ y: [20, -20, 20], rotate: -360 }} transition={{ duration: 22, repeat: Infinity, ease: "linear" }} className="absolute bottom-[5%] left-[-5%] w-[22vw] h-[22vw] rounded-full bg-gradient-to-br from-energy-pink/10 to-transparent blur-[80px] pointer-events-none" />
-        <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[40%] left-[30%] w-[18vw] h-[18vw] rounded-full bg-gradient-to-br from-purple-600/5 to-transparent blur-[60px] pointer-events-none" />
+        <div ref={orbsRef} className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+            <div className="orb-1 absolute top-[10%] right-[5%] w-[35vw] h-[35vw] rounded-full bg-gradient-to-br from-chill-blue/10 to-transparent blur-[100px]" />
+            <div className="orb-2 absolute bottom-[5%] left-[-10%] w-[30vw] h-[30vw] rounded-full bg-gradient-to-br from-energy-pink/10 to-transparent blur-[100px]" />
+            <div className="orb-3 absolute top-[40%] left-[25%] w-[25vw] h-[25vw] rounded-full bg-gradient-to-br from-purple-600/5 to-transparent blur-[80px]" />
+        </div>
 
-        {/* Grid / noise overlay */}
         <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.1) 40px, rgba(255,255,255,0.1) 41px), repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.1) 40px, rgba(255,255,255,0.1) 41px)" }} />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          
-          {/* Text and Vibe Slider */}
           <div className="flex flex-col gap-8">
-            {/* Live tag */}
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
-              className="flex items-center gap-3 w-fit">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3 w-fit">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-energy-pink opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-energy-pink"></span>
@@ -122,40 +117,22 @@ export default function Home() {
               <span className="text-text-secondary text-sm font-medium uppercase tracking-[0.2em]">Showing Live Events</span>
             </motion.div>
 
-            {/* Main heading */}
             <div className="space-y-3">
-              <motion.h1
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, ease: "circOut" }}
-                className="text-5xl md:text-6xl lg:text-7xl font-display font-bold leading-[1.05]"
-              >
+              <motion.h1 initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8 }} className="text-5xl md:text-6xl lg:text-7xl font-display font-bold leading-[1.05]">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">Find Your</span>
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-chill-blue via-purple-400 to-energy-pink">Experience.</span>
               </motion.h1>
-                <motion.p
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.2, ease: "circOut" }}
-                  className="text-text-secondary text-base md:text-lg max-w-lg leading-relaxed"
-                >
+              <motion.p initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="text-text-secondary text-base md:text-lg max-w-lg leading-relaxed">
                   Discover events that match your mood. Use the slider below to filter by energy level.
-                </motion.p>
+              </motion.p>
             </div>
 
-            {/* Vibe Slider */}
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.35, ease: "circOut" }}
-            >
-              <VibeSlider onVibeChange={handleVibeChange} initialLevel={targetVibe} />
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.35 }}>
+              <VibeSlider onVibeChange={handleVibeChange} initialLevel={vibeLevel} />
             </motion.div>
 
-            {/* Stats row — real data from /api/stats */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-              className="flex items-center gap-6 sm:gap-8 pt-2 flex-wrap">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="flex items-center gap-6 sm:gap-8 pt-2 flex-wrap">
               {[
                 [siteStats.events  >= 0 ? `${siteStats.events}+` : "…",   "Active Events"],
                 [siteStats.venues  >= 0 ? `${siteStats.venues}+` : "…",   "Venues"],
@@ -169,88 +146,61 @@ export default function Home() {
             </motion.div>
           </div>
 
-          {/* Live Event Preview */}
-          <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.9, delay: 0.3, ease: "circOut" }}
-            className="relative hidden lg:block"
-          >
-            {/* Glow behind preview */}
+          <div className="relative hidden lg:block">
             <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-chill-blue/10 to-energy-pink/10 blur-2xl scale-95 pointer-events-none" />
-
             <AnimatePresence mode="wait">
               {loading ? (
-                <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="flex flex-col gap-4">
-                  {[0,1,2].map(i => (
-                    <div key={i} className="h-24 rounded-2xl bg-clay-surface animate-pulse border border-white/5" />
-                  ))}
+                <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
+                  {[0,1,2].map(i => <div key={i} className="h-24 rounded-2xl bg-clay-surface animate-pulse border border-white/5" />)}
                 </motion.div>
               ) : events.length > 0 ? (
-                <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="flex flex-col gap-4">
+                <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
                   {events.slice(0, 3).map((evt, i) => (
-                    <motion.div
-                      key={evt.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.08 }}
-                      className="flex gap-4 items-center bg-clay-surface/60 backdrop-blur-xl rounded-2xl border border-white/5 p-4 group cursor-pointer hover:border-white/20 hover:bg-clay-surface transition-all duration-300 shadow-clay"
-                    >
+                    <motion.div key={evt.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="flex gap-4 items-center bg-clay-surface/60 backdrop-blur-xl rounded-2xl border border-white/5 p-4 group cursor-pointer hover:border-white/20 hover:bg-clay-surface transition-all duration-300 shadow-clay">
                       <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
                         <img src={getImageUrl(evt.imageUrl)} alt={evt.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-display font-bold text-white truncate">{evt.title}</p>
-                        <p className="text-text-secondary text-sm">{evt.venue?.name}</p>
-                      </div>
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border border-white/10"
-                        style={{ background: `hsl(${(evt.energyLevel / 10) * 300}, 80%, 60%)` }}>
-                        {evt.energyLevel}
-                      </div>
+                      <div className="flex-1 min-w-0"><p className="font-display font-bold text-white truncate">{evt.title}</p><p className="text-text-secondary text-sm">{evt.venue?.name}</p></div>
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border border-white/10" style={{ background: `hsl(${(evt.energyLevel / 10) * 300}, 80%, 60%)` }}>{evt.energyLevel}</div>
                     </motion.div>
                   ))}
-                  {events.length > 3 && (
-                    <p className="text-center text-text-secondary text-sm pt-1">+{events.length - 3} more events available</p>
-                  )}
                 </motion.div>
               ) : (
-                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="flex items-center justify-center h-48 bg-clay-surface/40 rounded-3xl border border-white/5">
+                <motion.div key="empty" className="flex items-center justify-center h-48 bg-clay-surface/40 rounded-3xl border border-white/5">
                   <p className="text-text-secondary text-sm">Adjust the slider to find events...</p>
                 </motion.div>
               )}
             </AnimatePresence>
-          </motion.div>
+          </div>
         </div>
-
-        {/* Scroll hint */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
-          className="hidden md:flex absolute bottom-6 left-1/2 -translate-x-1/2 flex-col items-center gap-2 text-text-secondary/40 z-10">
-          <span className="text-[10px] uppercase tracking-[0.3em]">Scroll to Explore</span>
-          <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            className="w-px h-8 bg-gradient-to-b from-white/30 to-transparent" />
-        </motion.div>
       </section>
 
-      {/* Trending Orbits - Handles its own pinning */}
-      <div className="relative z-10">
-        <HorizontalScrollFeed events={events} />
+      <div className="relative z-10 bg-void pt-20 pb-8 px-6 max-w-7xl mx-auto">
+        <div className="space-y-4 text-center md:text-left">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-center justify-center md:justify-start gap-3">
+             <div className="w-12 h-[1px] bg-white/20" />
+             <span className="text-text-secondary text-[10px] font-bold uppercase tracking-[0.4em]">Curated Picks</span>
+          </motion.div>
+          <motion.h2 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl lg:text-5xl font-display font-bold text-white tracking-tight">
+             Spotlight <span className="text-chill-blue">Experiences.</span>
+          </motion.h2>
+          <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="text-text-secondary max-w-xl mx-auto md:mx-0 text-xs md:text-sm">
+             Hand-picked events that define the current vibe. Choose your journey.
+          </motion.p>
+        </div>
       </div>
 
-      {/* Featured Venues — slides up over the horizontal feed on desktop */}
-      <section
-        ref={venuesSectionRef}
-        className="relative z-30 bg-clay-surface pt-20 md:pt-24 pb-32 rounded-t-[5rem] shadow-[0_-80px_100px_rgba(0,0,0,1)] border-t border-white/10"
-      >
-         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-1.5 bg-white/10 rounded-full mt-10" />
-         <VenuesGrid />
+      <div className="relative z-10 bg-void py-10 pb-20">
+        <MemoizedEventCarousel events={events} />
+      </div>
+
+      <section ref={venuesSectionRef} className="relative z-30 bg-void pt-10 pb-32">
+         <MemoizedVenuesGrid />
       </section>
       
       <div className="relative z-30 bg-clay-surface">
-        <Footer />
+        <MemoizedFooter />
       </div>
-    </motion.div>
+    </div>
   );
 }

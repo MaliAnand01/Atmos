@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { X, MapPin, CalendarBlank, Users, ArrowSquareOut, Ticket } from "@phosphor-icons/react";
+import { X, MapPin, Calendar, Users, ExternalLink, Ticket } from "lucide-react";
 import ClayButton from "./ClayButton";
 import { useState, useEffect } from "react";
 import { api, getImageUrl } from "../services/api";
@@ -69,12 +69,11 @@ export default function VenueDetailModal({ isOpen, onClose, venue }) {
             exit={{ y: 50, opacity: 0, scale: 0.95 }}
             className="bg-clay-surface rounded-[2.5rem] shadow-clay w-full max-w-2xl relative overflow-hidden text-text-primary z-10 max-h-full flex flex-col border border-white/5"
           >
-            {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-6 right-6 p-2 text-text-secondary hover:text-white transition-colors z-20 bg-void/50 rounded-full backdrop-blur-md border border-white/10"
+              className="absolute top-6 right-6 p-3 text-text-secondary hover:text-energy-pink transition-all duration-300 z-20 bg-void/60 rounded-full backdrop-blur-xl border border-white/10 shadow-clay hover:scale-110 active:scale-95"
             >
-              <X size={20} weight="bold" />
+              <X size={20} />
             </button>
 
             {/* Hero Image */}
@@ -103,12 +102,12 @@ export default function VenueDetailModal({ isOpen, onClose, venue }) {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="bg-void/40 p-4 rounded-2xl border border-white/5 flex flex-col gap-1 items-center text-center">
-                  <MapPin size={24} className="text-chill-blue mb-1" weight="fill" />
+                  <MapPin size={24} className="text-chill-blue mb-1" />
                   <span className="text-xs uppercase tracking-widest text-text-secondary">Location</span>
                   <span className="text-sm font-medium text-white line-clamp-2">{venue.address}</span>
                 </div>
                 <div className="bg-void/40 p-4 rounded-2xl border border-white/5 flex flex-col gap-1 items-center text-center">
-                  <Users size={24} className="text-energy-pink mb-1" weight="fill" />
+                  <Users size={24} className="text-energy-pink mb-1" />
                   <span className="text-xs uppercase tracking-widest text-text-secondary">Capacity</span>
                   <span className="text-sm font-medium text-white">{venue.capacity} People</span>
                 </div>
@@ -116,7 +115,7 @@ export default function VenueDetailModal({ isOpen, onClose, venue }) {
                   className="bg-void/40 p-4 rounded-2xl border border-white/5 flex flex-col gap-1 items-center text-center cursor-pointer hover:bg-void/60 transition-colors"
                   onClick={handleDirections}
                 >
-                  <ArrowSquareOut size={24} className="text-purple-400 mb-1" weight="fill" />
+                  <ExternalLink size={24} className="text-purple-400 mb-1" />
                   <span className="text-xs uppercase tracking-widest text-text-secondary">Navigation</span>
                   <span className="text-sm font-medium text-purple-400 underline underline-offset-4">Get Directions</span>
                 </div>
@@ -151,7 +150,7 @@ export default function VenueDetailModal({ isOpen, onClose, venue }) {
                           <p className="font-bold text-white">{event.title}</p>
                           <div className="flex items-center gap-3 text-xs text-text-secondary">
                             <div className="flex items-center gap-1">
-                              <CalendarBlank size={12} className="text-chill-blue" />
+                              <Calendar size={12} className="text-chill-blue" />
                               {new Date(event.dateTime).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
                             </div>
                             <div className="flex items-center gap-1">
@@ -161,7 +160,7 @@ export default function VenueDetailModal({ isOpen, onClose, venue }) {
                           </div>
                         </div>
                         <div className="px-4">
-                          <ArrowSquareOut size={20} className="text-text-secondary group-hover:text-white transition-colors" />
+                          <ExternalLink size={20} className="text-text-secondary group-hover:text-white transition-colors" />
                         </div>
                       </Link>
                     ))
@@ -177,7 +176,7 @@ export default function VenueDetailModal({ isOpen, onClose, venue }) {
 
               <div className="mt-12">
                 <ClayButton
-                  className="w-full bg-chill-blue text-void font-bold shadow-lg shadow-chill-blue/20"
+                  className="w-full"
                   variant="primary"
                   onClick={onClose}
                 >

@@ -54,6 +54,11 @@ public class PaymentController {
                     "Payment Successful! Your ticket to " + booking.getEvent().getTitle() + " is confirmed.", 
                     "BOOKING");
 
+                // Notify Organizer
+                notificationService.createNotification(booking.getEvent().getOrganizerId(),
+                    "New Booking! " + booking.getUser().getUsername() + " booked a ticket for " + booking.getEvent().getTitle(),
+                    "ORGANIZER_NOTIFICATION");
+
                 return ResponseEntity.ok(Map.of(
                     "status", "success",
                     "transactionId", booking.getRazorpayPaymentId(),

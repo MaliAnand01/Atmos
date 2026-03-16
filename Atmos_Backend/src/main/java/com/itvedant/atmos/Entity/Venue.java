@@ -27,7 +27,7 @@ public class Venue {
     @Column(nullable = false)
     private Integer capacity;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
     /** Venue events (JSON ignored to prevent recursion) */

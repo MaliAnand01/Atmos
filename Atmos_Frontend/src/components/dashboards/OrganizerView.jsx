@@ -1,6 +1,18 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Image as ImageIcon, UploadSimple, CheckCircle, Plus, Calendar, MapPin, ChartBar, Pencil, Trash } from "@phosphor-icons/react";
+import { 
+    Image, 
+    Upload, 
+    Check, 
+    Plus, 
+    Calendar, 
+    MapPin, 
+    BarChart3, 
+    Pencil, 
+    Trash2,
+    Info,
+    Clock
+} from "lucide-react";
 import ClayCard from "../ClayCard";
 import ClayButton from "../ClayButton";
 import { api, getImageUrl } from "../../services/api";
@@ -13,6 +25,7 @@ import toast from "react-hot-toast";
 const eventSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters"),
     description: z.string().min(10, "Description must be at least 10 characters"),
+    tagline: z.string().optional(),
     energyLevel: z.coerce.number().min(1).max(10),
     venueId: z.string().min(1, "Please select a venue"),
     capacity: z.coerce.number().min(1, "Capacity must be at least 1"),
@@ -21,13 +34,19 @@ const eventSchema = z.object({
         const date = new Date(val);
         return date > new Date();
     }, { message: "Please select a future date and time" }),
+    ageLimit: z.string().optional(),
+    dressCode: z.string().optional(),
+    doorPolicy: z.string().optional(),
 });
 
 export default function OrganizerView() {
     const [step, setStep] = useState(1);
     const [myEvents, setMyEvents] = useState([]);
     const [venues, setVenues] = useState([]);
+    const [bookings, setBookings] = useState([]);
+    const [activeTab, setActiveTab] = useState("events"); // "events" or "bookings"
     const [loading, setLoading] = useState(true);
+    const [bookingsLoading, setBookingsLoading] = useState(false);
     const user = getUser();
     
     // Non-form UI states
@@ -61,7 +80,21 @@ export default function OrganizerView() {
     useEffect(() => {
         fetchMyEvents();
         fetchVenues();
+        fetchBookings();
     }, []);
+
+    const fetchBookings = async () => {
+        if (!user) return;
+        setBookingsLoading(true);
+        try {
+            const data = await api.get(`/bookings/organizer/${user.id}`, true);
+            setBookings(data);
+        } catch (err) {
+            console.error("Failed to fetch organizer bookings:", err);
+        } finally {
+            setBookingsLoading(false);
+        }
+    };
 
     const fetchMyEvents = async () => {
         if (!user) return;
@@ -126,6 +159,7 @@ export default function OrganizerView() {
             const eventPayload = {
                 title: data.title,
                 description: data.description,
+                tagline: data.tagline,
                 energyLevel: parseInt(data.energyLevel),
                 imageUrl,
                 dateTime: data.dateTime,
@@ -133,7 +167,10 @@ export default function OrganizerView() {
                 availableCapacity: parseInt(data.capacity),
                 price: parseFloat(data.price),
                 venue: { id: parseInt(data.venueId) },
-                organizerId: user.id
+                organizerId: user.id,
+                ageLimit: data.ageLimit,
+                dressCode: data.dressCode,
+                doorPolicy: data.doorPolicy,
             };
 
             await api[editingEventId ? 'put' : 'post'](
@@ -166,6 +203,10 @@ export default function OrganizerView() {
             capacity: event.totalCapacity,
             price: event.price,
             dateTime: event.dateTime,
+            tagline: event.tagline || "",
+            ageLimit: event.ageLimit || "",
+            dressCode: event.dressCode || "",
+            doorPolicy: event.doorPolicy || "",
         });
         setPreviewUrl(getImageUrl(event.imageUrl));
         setStep(1);
@@ -193,6 +234,10 @@ export default function OrganizerView() {
             capacity: 100,
             price: 499,
             dateTime: "",
+            tagline: "",
+            ageLimit: "",
+            dressCode: "",
+            doorPolicy: "",
         });
         setPreviewUrl(null);
         setSelectedFile(null);
@@ -201,70 +246,129 @@ export default function OrganizerView() {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
-            <div className="flex justify-between items-end">
-                <h2 className="text-3xl font-display font-bold">My Events</h2>
-                <div className="flex gap-4 text-text-secondary text-sm">
-                    <span className="flex items-center gap-1"><ChartBar size={16} /> {myEvents.length} Active Events</span>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
+                <div>
+                    <h2 className="text-3xl font-display font-bold">Organizer Dashboard</h2>
+                    <p className="text-text-secondary text-sm mt-1">Manage your events and track bookings</p>
+                </div>
+                <div className="flex bg-clay-surface p-1 rounded-2xl border border-white/5">
+                    <button 
+                        onClick={() => setActiveTab("events")}
+                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === "events" ? "bg-chill-blue text-void shadow-lg" : "text-text-secondary hover:text-white"}`}
+                    >
+                        Events
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab("bookings")}
+                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === "bookings" ? "bg-chill-blue text-void shadow-lg" : "text-text-secondary hover:text-white"}`}
+                    >
+                        Bookings
+                    </button>
                 </div>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* My Events List */}
-                <div className="lg:col-span-2 space-y-6">
-                    <h3 className="text-xl font-bold font-display opacity-80">My Events</h3>
-                    {loading ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {[1, 2].map(i => <div key={i} className="h-40 bg-clay-surface rounded-3xl animate-pulse" />)}
-                        </div>
-                    ) : myEvents.length === 0 ? (
-                        <div className="p-12 border border-dashed border-white/10 rounded-3xl text-center bg-void/30">
-                            <p className="text-text-secondary">No events yet. Use the form on the right to create your first event.</p>
-                        </div>
+                {/* Main Content Area */}
+                <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
+                    {activeTab === "events" ? (
+                        <>
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-xl font-bold font-display opacity-80">My Events</h3>
+                                <span className="flex items-center gap-1 text-xs text-text-secondary"><BarChart3 size={14} /> {myEvents.length} Active</span>
+                            </div>
+                            {loading ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {[1, 2].map(i => <div key={i} className="h-40 bg-clay-surface rounded-3xl animate-pulse" />)}
+                                </div>
+                            ) : myEvents.length === 0 ? (
+                                <div className="p-12 border border-dashed border-white/10 rounded-3xl text-center bg-void/30">
+                                    <p className="text-text-secondary">No events yet. Use the form to create your first event.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {myEvents.map(event => (
+                                        <ClayCard key={event.id} className="group hover:border-chill-blue/30 transition-all p-0 overflow-hidden border border-white/5">
+                                            <div className="h-32 w-full overflow-hidden relative">
+                                                <img src={getImageUrl(event.imageUrl)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-60" />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-void to-transparent" />
+                                                <div className="absolute bottom-3 left-4">
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest bg-chill-blue/20 text-chill-blue px-2 py-1 rounded-md border border-chill-blue/30">
+                                                        Energy {event.energyLevel}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="p-5">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <h4 className="text-lg font-bold truncate pr-4">{event.title}</h4>
+                                                    
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => handleEdit(event)} className="p-2 bg-white/5 hover:bg-chill-blue/20 text-text-secondary hover:text-chill-blue rounded-lg transition-all">
+                                                            <Pencil size={16} />
+                                                        </button>
+                                                        <button onClick={() => handleDeleteEvent(event.id)} className="p-2 bg-white/5 hover:bg-energy-pink/20 text-text-secondary hover:text-energy-pink rounded-lg transition-all">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col gap-2 text-xs text-text-secondary">
+                                                    <div className="flex items-center gap-2"><MapPin size={14} className="text-chill-blue" /> {event.venue?.name || 'Venue tbd'}</div>
+                                                    <div className="flex items-center gap-2 font-medium">
+                                                        <span className="text-chill-blue">{event.totalCapacity - event.availableCapacity}</span> / {event.totalCapacity} Sold
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </ClayCard>
+                                    ))}
+                                </div>
+                            )}
+                        </>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {myEvents.map(event => (
-                                <ClayCard key={event.id} className="group hover:border-chill-blue/30 transition-all p-0 overflow-hidden border border-white/5">
-                                    <div className="h-32 w-full overflow-hidden relative">
-                                        <img src={getImageUrl(event.imageUrl)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-60" />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-void to-transparent" />
-                                        <div className="absolute bottom-3 left-4">
-                                            <span className="text-[10px] font-bold uppercase tracking-widest bg-chill-blue/20 text-chill-blue px-2 py-1 rounded-md border border-chill-blue/30">
-                                                Energy {event.energyLevel}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="p-5">
-                                        <div className="flex justify-between items-start mb-3">
-                                            <h4 className="text-lg font-bold truncate pr-4">{event.title}</h4>
-                                            
-                                            <div className="flex gap-2">
-                                                <button onClick={() => handleEdit(event)} className="p-2 bg-white/5 hover:bg-chill-blue/20 text-text-secondary hover:text-chill-blue rounded-lg transition-all">
-                                                    <Pencil size={16} />
-                                                </button>
-                                                <button onClick={() => handleDeleteEvent(event.id)} className="p-2 bg-white/5 hover:bg-energy-pink/20 text-text-secondary hover:text-energy-pink rounded-lg transition-all">
-                                                    <Trash size={16} />
-                                                </button>
+                        <>
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-xl font-bold font-display opacity-80">Recent Bookings</h3>
+                                <button onClick={fetchBookings} className="text-xs text-chill-blue hover:underline">Refresh</button>
+                            </div>
+                            {bookingsLoading ? (
+                                <div className="space-y-4">
+                                    {[1, 2, 3].map(i => <div key={i} className="h-20 bg-clay-surface rounded-2xl animate-pulse" />)}
+                                </div>
+                            ) : bookings.length === 0 ? (
+                                <div className="p-12 border border-dashed border-white/10 rounded-3xl text-center bg-void/30">
+                                    <p className="text-text-secondary">No bookings received yet.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {bookings.map(booking => (
+                                        <ClayCard key={booking.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/5 border-white/5">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-full bg-chill-blue/10 flex items-center justify-center text-chill-blue">
+                                                    <Check size={20} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-sm">{booking.user.username}</h4>
+                                                    <p className="text-xs text-text-secondary">Booked <span className="text-white">{booking.event.title}</span></p>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="flex flex-col gap-2 text-xs text-text-secondary">
-                                            <div className="flex items-center gap-2"><MapPin size={14} className="text-chill-blue" /> {event.venue?.name || 'Venue tbd'}</div>
-                                            <div className="flex items-center gap-2 font-medium">
-                                                <span className="text-chill-blue">{event.totalCapacity - event.availableCapacity}</span> / {event.totalCapacity} Sold
+                                            <div className="flex flex-col items-end gap-1">
+                                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${booking.status === 'ACTIVE' ? 'bg-chill-blue/20 text-chill-blue' : 'bg-energy-pink/20 text-energy-pink'}`}>
+                                                    {booking.status}
+                                                </span>
+                                                <p className="text-[10px] text-text-secondary">{new Date(booking.bookingTime).toLocaleDateString()}</p>
                                             </div>
-                                        </div>
-                                    </div>
-                                </ClayCard>
-                            ))}
-                        </div>
+                                        </ClayCard>
+                                    ))}
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
 
-                {/* Wizard Component */}
-                <div className="lg:col-span-1">
+                {/* Form Section */}
+                <div className="lg:col-span-1 order-1 lg:order-2">
                     <ClayCard className="p-8 sticky top-24 border border-chill-blue/20 shadow-[0_0_30px_rgba(0,240,255,0.05)]">
                         <div className="flex items-center gap-3 mb-8">
                             <div className="p-2 bg-chill-blue/10 rounded-lg text-chill-blue">
-                                <Plus size={20} weight="bold" />
+                                <Plus size={20} />
                             </div>
                             <h3 className="text-xl font-bold font-display">{editingEventId ? 'Edit Event' : 'New Event'}</h3>
                             {editingEventId && (
@@ -277,83 +381,51 @@ export default function OrganizerView() {
                                 {step === 1 && (
                                     <motion.div key="step1" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
                                         <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Event Name</label>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Event Name</label>
                                             <input 
                                                 {...register("title")}
                                                 type="text" 
-                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/10" 
-                                                placeholder="Event Title" 
+                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/20 text-sm font-body" 
+                                                placeholder="e.g., Midnight Techno Session" 
                                             />
-                                            {errors.title && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.title.message}</p>}
+                                            {errors.title && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.title.message}</p>}
                                         </div>
                                         <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Short Tagline</label>
+                                            <input 
+                                                {...register("tagline")}
+                                                type="text" 
+                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/20 text-sm font-body" 
+                                                placeholder="Keep it catchy & short" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">About Event</label>
                                             <textarea 
                                                 {...register("description")}
                                                 rows={3}
-                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/10 resize-none text-sm" 
-                                                placeholder="Tell people what this event is about..." 
+                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/20 resize-none text-sm font-body" 
+                                                placeholder="Simple description of the vibe..." 
                                             />
-                                            {errors.description && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.description.message}</p>}
+                                            {errors.description && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.description.message}</p>}
                                         </div>
                                     </motion.div>
                                 )}
                                 {step === 2 && (
                                     <motion.div key="step2" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Energy Level (1-10)</label>
-                                            <input 
-                                                {...register("energyLevel")}
-                                                type="range" 
-                                                min="1" max="10" 
-                                                className="w-full h-1.5 bg-void rounded-lg appearance-none cursor-pointer accent-chill-blue" 
-                                            />
-                                            <div className="flex justify-between mt-2 text-[10px] font-bold text-text-secondary">
-                                                <span className={energyLevel <= 3 ? "text-chill-blue" : ""}>CHILL</span>
-                                                <span className="text-white text-xs">{energyLevel}</span>
-                                                <span className={energyLevel >= 8 ? "text-energy-pink" : ""}>ENERGY</span>
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-2 gap-3 pt-2">
                                             <div>
-                                                <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Capacity</label>
-                                                <input 
-                                                    {...register("capacity")}
-                                                    type="number" 
-                                                    className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-sm" 
-                                                />
-                                                {errors.capacity && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.capacity.message}</p>}
+                                                <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Age Limit</label>
+                                                <input {...register("ageLimit")} placeholder="e.g. 21+" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
                                             </div>
                                             <div>
-                                                <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Price (₹)</label>
-                                                <input 
-                                                    {...register("price")}
-                                                    type="number" 
-                                                    className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-sm" 
-                                                />
-                                                {errors.price && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.price.message}</p>}
+                                                <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Dress Code</label>
+                                                <input {...register("dressCode")} placeholder="e.g. Smart Casual" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Venue</label>
-                                            <select
-                                                {...register("venueId")}
-                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-sm"
-                                            >
-                                                {venues.length === 0 && <option value="">Loading venues...</option>}
-                                                {venues.map(v => (
-                                                    <option key={v.id} value={v.id}>{v.name} (cap: {v.capacity})</option>
-                                                ))}
-                                            </select>
-                                            {errors.venueId && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.venueId.message}</p>}
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Date & Time</label>
-                                            <input 
-                                                {...register("dateTime")}
-                                                type="datetime-local" 
-                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-sm" 
-                                            />
-                                            {errors.dateTime && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.dateTime.message}</p>}
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Door Policy</label>
+                                            <input {...register("doorPolicy")} placeholder="e.g. Carry valid ID" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
                                         </div>
                                     </motion.div>
                                 )}
@@ -361,11 +433,11 @@ export default function OrganizerView() {
                                     <motion.div key="step3" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
                                         <div>
                                             <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Event Photo / Poster</label>
-                                            <div className="w-full h-48 border border-dashed border-white/10 rounded-xl p-4 flex flex-col items-center justify-center text-center text-text-secondary hover:border-chill-blue hover:bg-chill-blue/5 transition-all cursor-pointer relative overflow-hidden group">
+                                            <div className="w-full h-48 border border-dashed border-white/10 rounded-xl p-4 flex flex-col items-center justify-center text-center text-text-secondary hover:border-chill-blue hover:bg-chill-blue/5 transition-all cursor-pointer relative overflow-hidden group font-body">
                                                 {previewUrl ? (
                                                     <img src={previewUrl} className="absolute inset-0 w-full h-full object-cover opacity-60" />
                                                 ) : (
-                                                    <ImageIcon size={48} className="opacity-20 mb-2" />
+                                                    <Image size={48} className="opacity-20 mb-2" />
                                                 )}
                                                 <span className="text-sm mt-2 relative z-10 font-medium">{previewUrl ? "Change Image" : "Upload Event Poster"}</span>
                                                 <p className="text-[10px] opacity-40 mt-1 relative z-10">PNG, JPG or WEBP (Max 5MB)</p>
@@ -379,7 +451,7 @@ export default function OrganizerView() {
                                         {uploadSuccess ? (
                                             <>
                                                 <div className="w-16 h-16 rounded-full bg-chill-blue/10 flex items-center justify-center mb-4 border border-chill-blue/30 shadow-[0_0_20px_rgba(0,240,255,0.2)]">
-                                                    <CheckCircle size={32} weight="fill" className="text-chill-blue" />
+                                                    <Check size={32} className="text-chill-blue" />
                                                 </div>
                                                 <h4 className="text-xl font-bold mb-2">{editingEventId ? "Event Updated!" : "Event Created!"} 🎉</h4>
                                                 <p className="text-sm text-text-secondary">Your changes have been saved and the event is live.</p>
@@ -388,7 +460,7 @@ export default function OrganizerView() {
                                         ) : (
                                             <>
                                                 <div className="w-16 h-16 rounded-full bg-energy-pink/10 flex items-center justify-center mb-4 border border-energy-pink/30">
-                                                    <Plus size={32} className="text-energy-pink rotate-45" />
+                                                    <Info size={32} className="text-energy-pink" />
                                                 </div>
                                                 <h4 className="text-xl font-bold mb-2">Something Went Wrong</h4>
                                                 <p className="text-sm text-text-secondary">We could not create the event. Please check your details and try again.</p>

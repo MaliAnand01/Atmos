@@ -1,31 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 import gsap from "gsap";
 import { Draggable } from "gsap/all";
 
 gsap.registerPlugin(Draggable);
 
-export default function VibeSlider({ onVibeChange, initialLevel =  5}) {
+const VibeSlider = memo(({ onVibeChange, initialLevel = 5 }) => {
   const trackRef = useRef(null);
   const knobRef = useRef(null);
-  const [level, setLevel] = useState(initialLevel);
-  const levelRef = useRef(level);
-
-  useEffect(() => {
-    levelRef.current = level;
-  }, [level]);
+  
+  // Local state for immediate UI feedback without re-rendering parent
+  const [localLevel, setLocalLevel] = useState(initialLevel);
+  const localLevelRef = useRef(initialLevel);
 
   useEffect(() => {
     let debounceTimer;
 
     if (trackRef.current && knobRef.current) {
         const trackWidth = trackRef.current.clientWidth - knobRef.current.clientWidth;
-        const initialX = ((level - 1) / 9) * trackWidth;
+        const initialX = ((initialLevel - 1) / 9) * trackWidth;
         gsap.set(knobRef.current, { x: initialX });
     }
     
     Draggable.create(knobRef.current, {
       type: "x",
       bounds: trackRef.current,
+      edgeResistance: 0.65,
       inertia: true,
       onDrag: function() {
         const trackWidth = trackRef.current.clientWidth - knobRef.current.clientWidth;
@@ -34,12 +33,16 @@ export default function VibeSlider({ onVibeChange, initialLevel =  5}) {
         
         const rawLevel = Math.round(p * 9) + 1;
         
-        if (rawLevel !== levelRef.current) {
-          setLevel(rawLevel);
+        // Update local state only if changed to avoid unnecessary re-renders
+        if (rawLevel !== localLevelRef.current) {
+          localLevelRef.current = rawLevel;
+          setLocalLevel(rawLevel);
+          
+          // Debounce the heavy parent state update / API fetch
           clearTimeout(debounceTimer);
           debounceTimer = setTimeout(() => {
             if(onVibeChange) onVibeChange(rawLevel);
-          }, 300);
+          }, 150);
         }
       }
     });
@@ -49,32 +52,32 @@ export default function VibeSlider({ onVibeChange, initialLevel =  5}) {
       if(draggables) draggables.kill();
       clearTimeout(debounceTimer);
     }
-  }, [onVibeChange]);
+  }, [onVibeChange]); // initialLevel intentionally omitted to avoid reset on parent sync
 
   const getText = () => {
-    if(level <= 3) return "Chill / Relaxed";
-    if(level <= 7) return "Balanced / Groove";
+    if(localLevel <= 3) return "Chill / Relaxed";
+    if(localLevel <= 7) return "Balanced / Groove";
     return "High Energy / Intense";
   };
 
   const getColor = () => {
-    if(level <= 3) return '#00F0FF';
-    if(level >= 8) return '#FF007F';
+    if(localLevel <= 3) return '#00F0FF';
+    if(localLevel >= 8) return '#FF007F';
     return '#F8FAFC';
   };
 
   const getKnobBg = () => {
-    if(level <= 3) return '#6366F1';
-    if(level >= 8) return '#FF5E00';
+    if(localLevel <= 3) return '#6366F1';
+    if(localLevel >= 8) return '#FF5E00';
     return '#1A1D24';
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-6 my-6 md:my-12 relative z-10">
-      <div className="text-center">
+    <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-6 my-6 md:my-12 relative z-10 will-change-contents">
+      <div className="text-center pointer-events-none select-none">
         <h3 className="text-text-secondary font-display text-xl uppercase tracking-[0.2em] mb-2">Energy Level</h3>
         <p className="text-4xl md:text-6xl font-display font-bold drop-shadow-[0_0_12px_rgba(255,255,255,0.1)] transition-colors duration-500" style={{ color: getColor() }}>
-          {level} <span className="text-3xl text-text-secondary">/ 10</span>
+          {localLevel} <span className="text-3xl text-text-secondary">/ 10</span>
         </p>
         <p className="text-text-secondary mt-3 text-lg font-medium">{getText()}</p>
       </div>
@@ -82,7 +85,7 @@ export default function VibeSlider({ onVibeChange, initialLevel =  5}) {
       <div ref={trackRef} className="w-full h-16 md:h-24 bg-clay-surface rounded-full shadow-clay relative p-1.5 md:p-2 flex items-center box-border border border-white/5">
         <div 
           ref={knobRef} 
-          className="w-12 h-12 md:w-20 md:h-20 rounded-full cursor-grab active:cursor-grabbing shadow-[inset_2px_2px_4px_rgba(255,255,255,0.1),_inset_-2px_-2px_4px_rgba(0,0,0,0.5),_0_0_16px_rgba(0,0,0,0.8)] relative z-20 transition-colors duration-500 flex items-center justify-center"
+          className="w-12 h-12 md:w-20 md:h-20 rounded-full cursor-grab active:cursor-grabbing shadow-[inset_2px_2px_4px_rgba(255,255,255,0.1),_inset_-2px_-2px_4px_rgba(0,0,0,0.5),_0_0_16px_rgba(0,0,0,0.8)] relative z-20 transition-colors duration-500 flex items-center justify-center will-change-transform"
           style={{
             backgroundColor: getKnobBg(),
             border: `2px solid ${getColor()}`
@@ -97,4 +100,6 @@ export default function VibeSlider({ onVibeChange, initialLevel =  5}) {
       </div>
     </div>
   );
-}
+});
+
+export default VibeSlider;

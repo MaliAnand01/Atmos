@@ -22,6 +22,11 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getUserBookings(userId));
     }
 
+    @GetMapping("/organizer/{organizerId}")
+    public ResponseEntity<?> getOrganizerBookings(@PathVariable Long organizerId) {
+        return ResponseEntity.ok(bookingService.getOrganizerBookings(organizerId));
+    }
+
     @PutMapping("/{bookingId}/cancel")
     public ResponseEntity<?> cancelBooking(@PathVariable Long bookingId) {
         try {

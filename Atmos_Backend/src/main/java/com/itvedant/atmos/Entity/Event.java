@@ -25,7 +25,7 @@ public class Event {
     @Column(columnDefinition = "TEXT")
     private String description;
     
-    @Column(name = "image_url")
+    @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
     @Min(1) @Max(10)
@@ -53,6 +53,18 @@ public class Event {
 
     @Column
     private String category; // e.g. "Techno", "Jazz", "Live Music", "Comedy"
+
+    @Column
+    private String tagline;
+
+    @Column(name = "age_limit")
+    private String ageLimit;
+
+    @Column(name = "dress_code")
+    private String dressCode;
+
+    @Column(name = "door_policy", columnDefinition = "TEXT")
+    private String doorPolicy;
 
     @Column(name = "is_active", nullable = false)
     private Boolean active = true;

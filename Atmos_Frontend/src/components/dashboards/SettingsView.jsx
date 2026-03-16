@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Envelope, Lock, Warning, Trash } from "@phosphor-icons/react";
+import { useNavigate } from "react-router-dom";
+import { useUI } from "../../context/UIContext";
+import { User, Mail, Lock, AlertTriangle, Trash2 } from "lucide-react";
 import ClayCard from "../ClayCard";
 import ClayButton from "../ClayButton";
 import { api } from "../../services/api";
@@ -16,6 +18,8 @@ const settingsSchema = z.object({
 });
 
 export default function SettingsView() {
+    const { dispatch } = useUI();
+    const navigate = useNavigate();
     const user = getUser();
     const [status, setStatus] = useState({ type: "", message: "" });
     const [isDeleting, setIsDeleting] = useState(false);
@@ -61,7 +65,9 @@ export default function SettingsView() {
         setIsDeleting(true);
         try {
             await api.delete(`/users/${user.id}`);
-            logout(); // Redirects to home
+            logout(); 
+            dispatch({ type: 'LOGOUT' });
+            navigate('/');
         } catch (err) {
             setStatus({ type: "error", message: "Failed to delete account. Please try again." });
             setIsDeleting(false);
@@ -96,7 +102,7 @@ export default function SettingsView() {
                                 <div>
                                     <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Email Address</label>
                                     <div className="relative">
-                                        <Envelope className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
                                         <input 
                                             {...register("email")}
                                             type="email"
@@ -143,7 +149,7 @@ export default function SettingsView() {
                     <div className="space-y-6">
                         <ClayCard className="p-6 border-energy-pink/20 bg-energy-pink/5">
                         <div className="flex items-center gap-3 mb-4 text-energy-pink">
-                            <Warning size={24} weight="fill" />
+                            <AlertTriangle size={24} />
                             <h3 className="font-bold">Danger Zone</h3>
                         </div>
                         <p className="text-sm text-text-secondary mb-6">
@@ -155,7 +161,7 @@ export default function SettingsView() {
                                 onClick={() => setShowDeleteConfirm(true)}
                                 className="w-full py-3 rounded-xl border border-energy-pink/30 text-energy-pink hover:bg-energy-pink hover:text-white transition-all text-sm font-bold flex items-center justify-center gap-2"
                             >
-                                <Trash size={18} />
+                                <Trash2 size={18} />
                                 Delete Account
                             </button>
                         ) : (

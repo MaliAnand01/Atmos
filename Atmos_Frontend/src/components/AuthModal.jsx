@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { X, UserCircle, IdentificationBadge, Eye, EyeSlash, BuildingOffice, Phone, IdentificationCard } from "@phosphor-icons/react";
+import { X, UserCircle, BadgeCheck, Eye, EyeOff, Building, Phone, IdCard, User, Contact2 } from "lucide-react";
 import ClayButton from "./ClayButton";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
@@ -278,7 +278,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                           className={inputClass}
                         />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-[14px] text-text-secondary hover:text-white transition-colors">
-                          {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
+                          {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                         {errors.password && <p className="text-energy-pink text-xs mt-1 ml-1">{errors.password.message}</p>}
                       </div>
@@ -313,7 +313,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                             : "text-text-secondary hover:text-white"
                         }`}
                       >
-                        <UserCircle size={18} />
+                        <User size={18} />
                         Attendee
                       </button>
                       <button
@@ -325,7 +325,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                             : "text-text-secondary hover:text-white"
                         }`}
                       >
-                        <IdentificationBadge size={18} />
+                        <Contact2 size={18} />
                         Organizer
                       </button>
                     </div>
@@ -353,7 +353,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                             className={inputClass}
                           />
                           <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-[14px] text-text-secondary hover:text-white transition-colors">
-                            {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
+                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                           </button>
                           {errors.password && <p className="text-energy-pink text-xs mt-1 ml-1">{errors.password.message}</p>}
                         </div>
@@ -379,7 +379,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                               </div>
 
                               <div className="relative">
-                                <BuildingOffice size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" />
+                                <Building size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" />
                                 <input
                                   {...register("organizationName")}
                                   type="text"
@@ -402,7 +402,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                               </div>
 
                               <div className="relative">
-                                <IdentificationCard size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" />
+                                <IdCard size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" />
                                 <input
                                   {...register("panOrGstin")}
                                   type="text"
@@ -452,7 +452,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                   <motion.div key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col gap-6">
                     <div className="text-center">
                       <div className="w-16 h-16 bg-chill-blue/10 rounded-full flex items-center justify-center mx-auto mb-4 text-chill-blue border border-chill-blue/20">
-                        <IdentificationCard size={32} />
+                        <IdCard size={32} />
                       </div>
                       <h2 className="text-3xl font-display font-bold">Verify Identity</h2>
                       <p className="text-text-secondary mt-1 text-sm">We've sent a code to <span className="text-white font-medium">{tempUser?.email}</span></p>

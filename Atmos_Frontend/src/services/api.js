@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 // Create a centralized axios instance
 const axiosInstance = axios.create({
@@ -64,25 +64,12 @@ class ApiService {
     return axiosInstance.delete(endpoint);
   }
 
-  /** Multi-part file upload */
-  async upload(endpoint, file) {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    // Axios handles Multipart headers automatically when receiving FormData
-    return axiosInstance.post(endpoint, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-  }
 }
 
 // Helper to format image URLs from the backend
 export const getImageUrl = (url) => {
-  if (!url) return "https://images.unsplash.com/photo-1470221339082-e088f2067c7b?w=800&q=80"; // Fallback
-  if (url.startsWith('http')) return url;
-  return `http://localhost:8080${url}`;
+  if (!url || !url.startsWith('http')) return "https://images.unsplash.com/photo-1470221339082-e088f2067c7b?w=800&q=80";
+  return url;
 };
 
 export const api = new ApiService();

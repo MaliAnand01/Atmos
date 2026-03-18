@@ -2,16 +2,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { 
     Image, 
-    Upload, 
     Check, 
     Plus, 
-    Calendar, 
     MapPin, 
     BarChart3, 
     Pencil, 
     Trash2,
     Info,
-    Clock
+    Link
 } from "lucide-react";
 import ClayCard from "../ClayCard";
 import ClayButton from "../ClayButton";
@@ -34,6 +32,7 @@ const eventSchema = z.object({
         const date = new Date(val);
         return date > new Date();
     }, { message: "Please select a future date and time" }),
+    imageUrl: z.string().url("Please enter a valid image URL").optional().or(z.literal("")),
     ageLimit: z.string().optional(),
     dressCode: z.string().optional(),
     doorPolicy: z.string().optional(),
@@ -50,10 +49,7 @@ export default function OrganizerView() {
     const user = getUser();
     
     // Non-form UI states
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [previewUrl, setPreviewUrl] = useState(null);
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadSuccess, setUploadSuccess] = useState(false);
+    const [publishSuccess, setPublishSuccess] = useState(false);
     const [editingEventId, setEditingEventId] = useState(null);
 
     const {
@@ -125,7 +121,7 @@ export default function OrganizerView() {
         } else if (step === 2) {
             isStepValid = await trigger(["energyLevel", "capacity", "price", "venueId", "dateTime"]);
         } else if (step === 3) {
-            // Step 3 is just image upload, we'll proceed to launch
+            // Step 3 — image URL + publish
             await handleSubmit(handleFinalPublish)();
             return;
         }
@@ -137,25 +133,10 @@ export default function OrganizerView() {
     
     const prevStep = () => setStep(s => Math.max(1, s - 1));
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setSelectedFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
-        }
-    };
-
     const handleFinalPublish = async (data) => {
-        setIsUploading(true);
         try {
-            let imageUrl = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80"; // Fallback
-            
-            if (selectedFile) {
-                const result = await api.upload('/files/upload', selectedFile);
-                imageUrl = result.imageUrl;
-            }
+            const imageUrl = data.imageUrl?.trim() || "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80";
 
-            // Create the real event
             const eventPayload = {
                 title: data.title,
                 description: data.description,
@@ -178,18 +159,16 @@ export default function OrganizerView() {
                 eventPayload
             );
             
-            setUploadSuccess(true);
+            setPublishSuccess(true);
             setStep(4);
             setEditingEventId(null);
-            fetchMyEvents(); // Refresh list
+            fetchMyEvents();
             toast.success(editingEventId ? "Event updated successfully!" : "Event published successfully!");
         } catch (error) {
-            console.error("Launch failed:", error);
-            setUploadSuccess(false);
+            console.error("Publish failed:", error);
+            setPublishSuccess(false);
             setStep(4);
             toast.error("Failed to publish event. Please check your data.");
-        } finally {
-            setIsUploading(false);
         }
     };
 
@@ -204,11 +183,11 @@ export default function OrganizerView() {
             price: event.price,
             dateTime: event.dateTime,
             tagline: event.tagline || "",
+            imageUrl: event.imageUrl || "",
             ageLimit: event.ageLimit || "",
             dressCode: event.dressCode || "",
             doorPolicy: event.doorPolicy || "",
         });
-        setPreviewUrl(getImageUrl(event.imageUrl));
         setStep(1);
     };
 
@@ -235,12 +214,11 @@ export default function OrganizerView() {
             price: 499,
             dateTime: "",
             tagline: "",
+            imageUrl: "",
             ageLimit: "",
             dressCode: "",
             doorPolicy: "",
         });
-        setPreviewUrl(null);
-        setSelectedFile(null);
         setStep(1);
     };
 
@@ -432,23 +410,40 @@ export default function OrganizerView() {
                                 {step === 3 && (
                                     <motion.div key="step3" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
                                         <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Event Photo / Poster</label>
-                                            <div className="w-full h-48 border border-dashed border-white/10 rounded-xl p-4 flex flex-col items-center justify-center text-center text-text-secondary hover:border-chill-blue hover:bg-chill-blue/5 transition-all cursor-pointer relative overflow-hidden group font-body">
-                                                {previewUrl ? (
-                                                    <img src={previewUrl} className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                                                ) : (
-                                                    <Image size={48} className="opacity-20 mb-2" />
-                                                )}
-                                                <span className="text-sm mt-2 relative z-10 font-medium">{previewUrl ? "Change Image" : "Upload Event Poster"}</span>
-                                                <p className="text-[10px] opacity-40 mt-1 relative z-10">PNG, JPG or WEBP (Max 5MB)</p>
-                                                <input type="file" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Event Image URL</label>
+                                            <div className="relative">
+                                                <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                                                <input
+                                                    {...register("imageUrl")}
+                                                    type="url"
+                                                    className="w-full bg-void text-white pl-8 pr-3 py-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/20 text-sm font-body"
+                                                    placeholder="https://example.com/poster.jpg"
+                                                />
                                             </div>
+                                            {errors.imageUrl && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.imageUrl.message}</p>}
                                         </div>
+                                        {/* Live preview */}
+                                        <div className="w-full h-40 rounded-xl overflow-hidden border border-white/5 bg-void flex items-center justify-center">
+                                            {watch("imageUrl") ? (
+                                                <img
+                                                    src={watch("imageUrl")}
+                                                    className="w-full h-full object-cover opacity-70"
+                                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                                    onLoad={(e) => { e.target.style.display = 'block'; }}
+                                                />
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-2 text-text-secondary">
+                                                    <Image size={36} className="opacity-20" />
+                                                    <p className="text-[10px] opacity-40 font-body">Image preview will appear here</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <p className="text-[10px] text-text-secondary opacity-50 font-body">Leave blank to use a default image. Use any public image URL (Unsplash, Imgur, etc.)</p>
                                     </motion.div>
                                 )}
                                 {step === 4 && (
                                     <motion.div key="step4" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center justify-center text-center py-8">
-                                        {uploadSuccess ? (
+                                        {publishSuccess ? (
                                             <>
                                                 <div className="w-16 h-16 rounded-full bg-chill-blue/10 flex items-center justify-center mb-4 border border-chill-blue/30 shadow-[0_0_20px_rgba(0,240,255,0.2)]">
                                                     <Check size={32} className="text-chill-blue" />
@@ -478,7 +473,7 @@ export default function OrganizerView() {
                                     <ClayButton 
                                         variant="secondary" 
                                         onClick={prevStep} 
-                                        disabled={step === 1 || isUploading}
+                                        disabled={step === 1}
                                         className="flex-1 text-xs py-2 disabled:opacity-20"
                                     >
                                         Back
@@ -486,10 +481,9 @@ export default function OrganizerView() {
                                     <ClayButton 
                                         variant="primary" 
                                         onClick={nextStep} 
-                                        disabled={isUploading}
                                         className={`flex-1 text-xs py-2 shadow-lg transition-all ${step === 3 ? "bg-chill-blue text-void hover:shadow-[0_0_20px_rgba(0,240,255,0.4)]" : "bg-white text-void"}`}
                                     >
-                                        {isUploading ? "Saving..." : step === 3 ? (editingEventId ? "Save Changes" : "Publish Event") : "Next"}
+                                        {step === 3 ? (editingEventId ? "Save Changes" : "Publish Event") : "Next"}
                                     </ClayButton>
                                 </>
                             )}

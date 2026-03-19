@@ -120,7 +120,7 @@ export default function EventDetail() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-void min-h-screen font-body text-text-primary pb-28 md:pb-0">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-void min-h-screen font-body text-text-primary pb-48 md:pb-20">
       <div className="w-full h-[55vh] md:h-[70vh] relative overflow-hidden">
         <motion.img initial={{ scale: 1.08 }} animate={{ scale: 1 }} transition={{ duration: 1.4, ease: "circOut" }} src={getImageUrl(event.imageUrl)} alt={event.title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-void via-void/60 to-void/10" />
@@ -177,17 +177,17 @@ export default function EventDetail() {
           <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}>
             <h2 className="text-2xl font-display font-bold mb-6">Know Before You Go</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <ClayCard className="p-4 flex items-center gap-3 border-white/5">
-                <div className="text-energy-pink/80"><ShieldCheck size={20} /></div>
-                <div><p className="text-[10px] uppercase font-bold text-text-secondary tracking-widest">Entry Age</p><p className="text-white text-sm font-bold">{event.ageLimit || "18+"}</p></div>
+              <ClayCard className="p-4 flex items-start gap-4 border-white/5">
+                <div className="text-energy-pink/80 mt-1"><ShieldCheck size={20} /></div>
+                <div className="flex-1 min-w-0"><p className="text-[10px] uppercase font-bold text-text-secondary tracking-widest">Entry Age</p><p className="text-white text-sm font-bold break-words">{event.ageLimit || "18+"}</p></div>
               </ClayCard>
-              <ClayCard className="p-4 flex items-center gap-3 border-white/5">
-                <div className="text-chill-blue/80"><Shirt size={20} /></div>
-                <div><p className="text-[10px] uppercase font-bold text-text-secondary tracking-widest">Dress Code</p><p className="text-white text-sm font-bold">{event.dressCode || "Smart Casual"}</p></div>
+              <ClayCard className="p-4 flex items-start gap-4 border-white/5">
+                <div className="text-chill-blue/80 mt-1"><Shirt size={20} /></div>
+                <div className="flex-1 min-w-0"><p className="text-[10px] uppercase font-bold text-text-secondary tracking-widest">Dress Code</p><p className="text-white text-sm font-bold break-words">{event.dressCode || "Smart Casual"}</p></div>
               </ClayCard>
-              <ClayCard className="p-4 flex items-center gap-3 border-white/5">
-                <div className="text-energy-orange/80"><IdCard size={20} /></div>
-                <div><p className="text-[10px] uppercase font-bold text-text-secondary tracking-widest">Door Policy</p><p className="text-white text-sm font-bold truncate">{event.doorPolicy || "Valid ID Required"}</p></div>
+              <ClayCard className="p-4 flex items-start gap-4 border-white/5">
+                <div className="text-energy-orange/80 mt-1"><IdCard size={20} /></div>
+                <div className="flex-1 min-w-0"><p className="text-[10px] uppercase font-bold text-text-secondary tracking-widest">Door Policy</p><p className="text-white text-sm font-bold break-words">{event.doorPolicy || "Valid ID Required"}</p></div>
               </ClayCard>
             </div>
           </motion.div>

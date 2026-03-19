@@ -8,6 +8,9 @@ import VenuesGrid from "../components/VenuesGrid";
 import Footer from "../components/Footer";
 import { api, getImageUrl } from "../services/api";
 import { useUI } from "../context/UIContext";
+import VibePillars from "../components/VibePillars";
+import WeekendOutlook from "../components/WeekendOutlook";
+import AtmosStories from "../components/AtmosStories";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -45,8 +48,39 @@ export default function Home() {
     api.get('/stats').then(data => setSiteStats(data)).catch(() => {});
   }, [fetchEventsByVibe, vibeLevel]);
 
+  // State to hold the GSAP context for vibe changes to allow cleanup
+  const vibeCtxRef = useRef(null);
+
+  const handleVibeChange = useCallback((level) => {
+    dispatch({ type: 'SET_VIBE', payload: level });
+    
+    const colorStops = {
+      chill: "radial-gradient(circle at center, rgba(0,240,255,0.08) 0%, rgba(13,15,20,1) 70%)",
+      balanced: "radial-gradient(circle at center, rgba(20,22,30,0) 0%, rgba(13,15,20,1) 70%)",
+      energy: "radial-gradient(circle at center, rgba(255,0,127,0.08) 0%, rgba(13,15,20,1) 70%)",
+    };
+    
+    let targetGrad = colorStops.balanced;
+    if(level <= 3) targetGrad = colorStops.chill;
+    if(level >= 8) targetGrad = colorStops.energy;
+
+    // Use a separate context for the vibe update to ensure it's cleanable
+    if (vibeCtxRef.current) vibeCtxRef.current.revert();
+    vibeCtxRef.current = gsap.context(() => {
+        gsap.to(".hero-bg-overlay", {
+            background: targetGrad,
+            duration: 1.5,
+            ease: "power2.inOut",
+            overwrite: "auto"
+        });
+    }, containerRef);
+  }, [dispatch]);
+
   // Performance Optimized Animations
   useEffect(() => {
+    // Force a fresh refresh to sync with Lenis/ScrollTrigger
+    ScrollTrigger.refresh();
+
     const ctx = gsap.context(() => {
       // 1. Orbs Infinite GPU Animation
       gsap.to(".orb-1", { x: "20%", y: "15%", duration: 25, repeat: -1, yoyo: true, ease: "sine.inOut" });
@@ -64,40 +98,26 @@ export default function Home() {
               start: "top 85%",
               end: "top 20%",
               scrub: 1.2,
+              invalidateOnRefresh: true,
             }
           }
         );
       }
     }, containerRef);
     
-    return () => ctx.revert();
+    return () => {
+        ctx.revert();
+        if (vibeCtxRef.current) vibeCtxRef.current.revert();
+        // Clear global ScrollTriggers that might be stuck
+        ScrollTrigger.getAll().forEach(t => t.kill());
+    };
   }, []);
 
-  const handleVibeChange = useCallback((level) => {
-    dispatch({ type: 'SET_VIBE', payload: level });
-    
-    const colorStops = {
-      chill: "radial-gradient(circle at center, rgba(0,240,255,0.08) 0%, rgba(13,15,20,1) 70%)",
-      balanced: "radial-gradient(circle at center, rgba(20,22,30,0) 0%, rgba(13,15,20,1) 70%)",
-      energy: "radial-gradient(circle at center, rgba(255,0,127,0.08) 0%, rgba(13,15,20,1) 70%)",
-    };
-    
-    let targetGrad = colorStops.balanced;
-    if(level <= 3) targetGrad = colorStops.chill;
-    if(level >= 8) targetGrad = colorStops.energy;
-
-    gsap.to(".hero-bg-overlay", {
-        background: targetGrad,
-        duration: 1.5,
-        ease: "power2.inOut"
-    });
-  }, [dispatch]);
-
   return (
-    <div ref={containerRef} className="bg-void min-h-screen font-body text-text-primary overflow-x-hidden pb-28 md:pb-0 pt-10 md:pt-0">
+    <div ref={containerRef} className="bg-void min-h-screen font-body text-text-primary overflow-x-hidden pb-28 md:pb-0 pt-0 md:pt-0">
       {/* Hero Section */}
-      <section className="relative w-full min-h-[90vh] flex flex-col justify-center overflow-hidden z-20 pt-24 pb-28 md:pb-16">
-        <div className="hero-bg-overlay absolute inset-0 z-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,240,255,0.06) 0%, rgba(13,15,20,1) 70%)" }} />
+      <section className="relative w-full min-h-[90vh] flex flex-col justify-center overflow-hidden z-20 pt-20 pb-20 md:pb-12">
+        <div className="hero-bg-overlay absolute inset-0 z-0 pointer-events-none transition-colors duration-1000" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,240,255,0.06) 0%, rgba(13,15,20,1) 70%)" }} />
         
         <div ref={orbsRef} className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
             <div className="orb-1 absolute top-[10%] right-[5%] w-[35vw] h-[35vw] rounded-full bg-gradient-to-br from-chill-blue/10 to-transparent blur-[100px]" />
@@ -175,7 +195,10 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="relative z-10 bg-void pt-20 pb-8 px-6 max-w-7xl mx-auto">
+      {/* Vibe Pillars: Value Props */}
+      <VibePillars />
+
+      <div className="relative z-10 bg-void pt-10 pb-4 px-6 max-w-7xl mx-auto">
         <div className="space-y-4 text-center md:text-left">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-center justify-center md:justify-start gap-3">
              <div className="w-12 h-[1px] bg-white/20" />
@@ -190,13 +213,19 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="relative z-10 bg-void py-10 pb-20">
+      <div className="relative z-10 bg-void py-6 pb-12">
         <MemoizedEventCarousel events={events} />
       </div>
 
-      <section ref={venuesSectionRef} className="relative z-30 bg-void pt-10 pb-32">
+      {/* Weekend Outlook: Date Shortcuts */}
+      <WeekendOutlook />
+
+      <section ref={venuesSectionRef} className="relative z-30 bg-void pt-4 pb-20">
          <MemoizedVenuesGrid />
       </section>
+
+      {/* Atmos Stories: Testimonials */}
+      <AtmosStories />
       
       <div className="relative z-30 bg-clay-surface">
         <MemoizedFooter />

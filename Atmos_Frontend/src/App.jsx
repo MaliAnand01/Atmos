@@ -13,6 +13,7 @@ import Tickets from "./pages/Tickets";
 // Components
 import FloatingNav from "./components/FloatingNav";
 import AuthModal from "./components/AuthModal";
+import ScrollToTopButton from "./components/ScrollToTopButton";
 import ScrollToTop from "./components/ScrollToTop";
 
 // Context
@@ -69,6 +70,7 @@ function App() {
         />
         <Router>
           <ScrollToTop />
+          <ScrollToTopButton />
           <AnimatedRoutes />
         </Router>
       </ReactLenis>

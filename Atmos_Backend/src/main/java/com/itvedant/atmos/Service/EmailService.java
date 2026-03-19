@@ -12,6 +12,9 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.username}")
+    private String fromEmail;
+
     @org.springframework.scheduling.annotation.Async
     public void sendOtpEmail(String toEmail, String otp) {
         String subject = "Verify Your Atmos Account";
@@ -31,7 +34,7 @@ public class EmailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom("atmos.platform@gmail.com");
+            helper.setFrom(java.util.Objects.requireNonNull(fromEmail));
             helper.setTo(java.util.Objects.requireNonNull(toEmail));
             helper.setSubject(java.util.Objects.requireNonNull(subject));
             helper.setText(content, true);

@@ -29,17 +29,24 @@ const wrap = (min, max, v) => {
 };
 
 const AUTO_PLAY_INTERVAL = 4000;
-const ITEM_HEIGHT = 60;
+const ITEM_HEIGHT = 85; 
 
 const EventFeatureCarousel = ({ events }) => {
   const [step, setStep] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const scrollRef = React.useRef(null);
+  const activeChipRef = React.useRef(null);
+
+  const currentIndex = events && events.length > 0 ? ((step % events.length) + events.length) % events.length : 0;
+  const currentEvent = events && events.length > 0 ? events[currentIndex] : null;
 
   // Helper to determine vibe color based on energy level
   const getVibeColor = (level) => {
     const h = (level / 10) * 280; // Scale 10 to ~280deg (Purple/Pink/Blue range)
     return `hsl(${h}, 75%, 60%)`;
   };
+
+  const currentVibeColor = currentEvent ? getVibeColor(currentEvent.energyLevel || 5) : "#0D0F14";
 
   // Category to Icon Mapping Using Hugeicons
   const CATEGORY_ICONS = {
@@ -63,6 +70,21 @@ const EventFeatureCarousel = ({ events }) => {
     return () => clearInterval(interval);
   }, [nextStep, isPaused, events]);
 
+  // Center active chip on mobile without page jump
+  useEffect(() => {
+    if (activeChipRef.current && scrollRef.current) {
+      const container = scrollRef.current;
+      const chip = activeChipRef.current;
+      
+      const scrollLeft = chip.offsetLeft + (chip.clientWidth / 2) - (container.clientWidth / 2);
+      
+      container.scrollTo({
+        left: scrollLeft,
+        behavior: "smooth"
+      });
+    }
+  }, [currentIndex]);
+
   // If no events, show skeleton
   if (!events || events.length === 0) {
     return (
@@ -72,14 +94,9 @@ const EventFeatureCarousel = ({ events }) => {
     );
   }
 
-  const currentIndex = ((step % events.length) + events.length) % events.length;
-  const currentEvent = events[currentIndex];
-  const currentVibeColor = getVibeColor(currentEvent.energyLevel || 5);
-
   const handleChipClick = (index) => {
-    const diff = (index - currentIndex + events.length) % events.length;
-    if (diff > 0) setStep((s) => s + diff);
-    if (diff < 0) setStep((s) => s + (events.length + diff));
+    const diff = index - currentIndex;
+    setStep((s) => s + diff);
   };
 
   const getCardStatus = (index) => {
@@ -98,21 +115,48 @@ const EventFeatureCarousel = ({ events }) => {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-8">
-      <div className="relative overflow-hidden rounded-[2.5rem] lg:rounded-[3.5rem] flex flex-col lg:flex-row min-h-[480px] lg:h-[500px] border border-white/10 bg-void shadow-2xl transition-all duration-500 will-change-transform">
+      <div className="relative overflow-hidden rounded-[2.5rem] lg:rounded-[3.5rem] flex flex-col lg:flex-row min-h-[500px] lg:h-[580px] border border-white/10 bg-void shadow-2xl transition-all duration-500 will-change-transform">
         
-        {/* Left Side: Navigation Chips (Dynamic Vibe Color) */}
-        <motion.div 
-          animate={{ backgroundColor: currentVibeColor }}
-          transition={{ duration: 1, ease: "easeInOut" }}
-          className="w-full lg:w-[35%] min-h-[300px] lg:h-full relative z-30 flex flex-col items-start justify-center overflow-hidden px-8 md:px-12 lg:pl-12 transition-colors duration-1000"
+        {/* Mobile Navigation (Horizontal Scroll) */}
+        <div 
+          ref={scrollRef}
+          className="flex lg:hidden overflow-x-auto scrollbar-hide snap-x p-6 gap-3 z-50 bg-[#0D0F14] border-b border-white/5"
         >
-          {/* Fades that match the vibe */}
-          <motion.div 
-            animate={{ background: `gradient(linear, left top, left bottom, from(${currentVibeColor}), color-stop(50%, transparent), to(${currentVibeColor}))` }}
-            className="absolute inset-0 z-40 pointer-events-none"
-            style={{
-              background: `linear-gradient(to bottom, ${currentVibeColor} 0%, transparent 20%, transparent 80%, ${currentVibeColor} 100%)`
-            }}
+          {events.map((event, index) => {
+            const isActive = index === currentIndex;
+            const Icon = CATEGORY_ICONS[event.category] || CATEGORY_ICONS.Default;
+            return (
+              <button
+                key={`mobile-nav-${event.id || index}`}
+                ref={isActive ? activeChipRef : null}
+                onClick={() => handleChipClick(index)}
+                className={cn(
+                  "snap-center flex items-center gap-3 px-6 py-3 rounded-2xl whitespace-nowrap transition-all duration-500 border shadow-clay",
+                  isActive 
+                    ? "bg-white text-void border-white scale-105" 
+                    : "bg-clay-surface/40 text-white/40 border-white/5"
+                )}
+              >
+                <Icon size={16} />
+                <span className="text-xs font-bold uppercase tracking-tight">{event.title}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Left Side: Navigation Chips (Desktop Only) */}
+        <motion.div 
+          className="hidden lg:flex lg:w-[40%] h-full relative z-30 flex-col items-start justify-center overflow-hidden lg:pl-16 bg-[#0D0F14] transition-colors duration-1000"
+        >
+          {/* Subtle gradient overlay for depth */}
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent z-10 pointer-events-none" />
+
+          {/* Fades for smooth edge transition */}
+          <div 
+            className="absolute inset-x-0 top-0 h-32 z-40 pointer-events-none bg-gradient-to-b from-[#0D0F14] to-transparent"
+          />
+          <div 
+            className="absolute inset-x-0 bottom-0 h-32 z-40 pointer-events-none bg-gradient-to-t from-[#0D0F14] to-transparent"
           />
           
           <div className="relative w-full h-full flex items-center justify-center lg:justify-start z-20 font-body">
@@ -153,10 +197,10 @@ const EventFeatureCarousel = ({ events }) => {
                     onMouseEnter={() => setIsPaused(true)}
                     onMouseLeave={() => setIsPaused(false)}
                     className={cn(
-                      "relative flex items-center gap-4 px-6 md:px-10 lg:px-6 py-2.5 md:py-3.5 lg:py-3 rounded-full transition-all duration-700 text-left group border whitespace-nowrap",
+                      "relative flex items-center gap-6 px-10 md:px-14 lg:px-10 py-5 md:py-6 lg:py-5 rounded-[2.2rem] transition-all duration-700 text-left group border whitespace-nowrap",
                       isActive
-                        ? "bg-white text-void border-white z-10 shadow-clay scale-[1.03]"
-                        : "bg-transparent text-white/50 border-white/10 hover:border-white/40 hover:text-white"
+                        ? "bg-white text-void border-white z-10 shadow-clay scale-[1.05]"
+                        : "bg-clay-surface/40 text-white/40 border-white/5 shadow-clay hover:border-white/20 hover:text-white"
                     )}
                   >
                     <div
@@ -166,13 +210,13 @@ const EventFeatureCarousel = ({ events }) => {
                       )}
                     >
                       <Icon
-                        size={18}
-                        strokeWidth={2}
+                        size={24}
+                        strokeWidth={2.5}
                       />
                     </div>
 
                     <span className={cn(
-                      "font-bold text-[10px] md:text-xs tracking-tight uppercase transition-colors duration-500",
+                      "font-bold text-sm md:text-lg tracking-tight uppercase transition-colors duration-500",
                       isActive ? "text-void" : "text-white/60"
                     )}>
                       {event.title}
@@ -185,8 +229,10 @@ const EventFeatureCarousel = ({ events }) => {
         </motion.div>
 
         {/* Right Side: Image Cards (Premium Parity) */}
-        <div className="flex-1 min-h-[450px] lg:h-full relative flex items-center justify-center py-12 px-6 overflow-hidden border-t lg:border-t-0 lg:border-l border-white/10 bg-secondary/30 backdrop-blur-sm">
-          <div className="relative w-full max-w-[360px] aspect-[4/5] flex items-center justify-center">
+        <div 
+          className="flex-1 min-h-[400px] lg:h-full relative flex items-center justify-center py-8 lg:py-12 px-6 overflow-hidden border-t lg:border-t-0 lg:border-l border-white/10 bg-[#14161E]/40 backdrop-blur-sm"
+        >
+          <div className="relative w-full max-w-[320px] md:max-w-[420px] aspect-[4/5] flex items-center justify-center">
             {events.map((event, index) => {
               const status = getCardStatus(index);
               const isActive = status === "active";
@@ -195,7 +241,7 @@ const EventFeatureCarousel = ({ events }) => {
 
               return (
                 <motion.div
-                  key={event.id || index}
+                  key={event.id}
                   initial={false}
                   animate={{
                     x: isActive ? 0 : isPrev ? -100 : isNext ? 100 : 0,
@@ -204,6 +250,13 @@ const EventFeatureCarousel = ({ events }) => {
                     rotate: isPrev ? -3 : isNext ? 3 : 0,
                     zIndex: isActive ? 20 : isPrev || isNext ? 10 : 0,
                     pointerEvents: isActive ? "auto" : "none",
+                  }}
+                  drag={isActive ? "x" : false}
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={(e, info) => {
+                    if (info.offset.x < -50) nextStep();
+                    else if (info.offset.x > 50) setStep(s => s - 1);
                   }}
                   transition={{
                     type: "spring",
@@ -227,6 +280,7 @@ const EventFeatureCarousel = ({ events }) => {
                   <AnimatePresence>
                     {isActive && (
                       <motion.div
+                        key={event.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
@@ -247,8 +301,8 @@ const EventFeatureCarousel = ({ events }) => {
                                  <span>{event.venue?.name}</span>
                               </div>
                            </div>
-                           <p className="text-white font-display font-bold text-xl md:text-2xl leading-tight tracking-tight">
-                              Reserve your spot for the ultimate atmosphere.
+                           <p className="text-white font-display font-bold text-xl md:text-2xl leading-tight tracking-tight drop-shadow-md">
+                              {event.title}
                            </p>
                            <Link to={`/event/${event.id}`} className="pointer-events-auto block w-fit pt-2">
                             <motion.button 

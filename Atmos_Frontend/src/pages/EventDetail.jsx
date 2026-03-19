@@ -22,6 +22,7 @@ import CheckoutModal from "../components/CheckoutModal";
 import { api, getImageUrl } from "../services/api";
 import { getUser } from "../services/authStore";
 import toast from "react-hot-toast";
+import { useUI } from "../context/UIContext";
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -32,6 +33,7 @@ export default function EventDetail() {
   const [error, setError] = useState(null);
   const [liked, setLiked] = useState(false);
   const user = getUser();
+  const { dispatch } = useUI();
 
   useEffect(() => {
     const fetchEventData = async () => {
@@ -71,6 +73,18 @@ export default function EventDetail() {
       setLiked(!isAdding);
       toast.error("Action failed");
     }
+  };
+  
+  const handleBookingClick = () => {
+    if (!user) {
+      toast.error("Please login to book this event", {
+        icon: '🔒',
+        duration: 4000
+      });
+      dispatch({ type: 'SET_AUTH_MODAL', payload: true });
+      return;
+    }
+    setIsCheckoutOpen(true);
   };
 
   const energyColor = event
@@ -206,7 +220,7 @@ export default function EventDetail() {
                     <div className="h-2 bg-void rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${availabilityPct}%` }} transition={{ duration: 1 }} className="h-full rounded-full bg-energy-pink" /></div>
                     <p className="text-text-secondary text-xs">{availabilityPct}% capacity available</p>
                   </div>
-                  <ClayButton className="w-full" variant="primary" onClick={() => setIsCheckoutOpen(true)}>Book Now</ClayButton>
+                  <ClayButton className="w-full" variant="primary" onClick={handleBookingClick}>Book Now</ClayButton>
                   <p className="text-center text-text-secondary/60 text-xs mt-4">🔒 Safe & secure checkout</p>
                 </div>
               </ClayCard>
@@ -222,7 +236,7 @@ export default function EventDetail() {
 
       <div className="lg:hidden fixed bottom-24 left-0 right-0 bg-clay-surface/95 backdrop-blur-xl p-4 border-t border-white/10 z-[60] flex items-center justify-between">
         <div><p className="text-text-secondary text-[10px] uppercase tracking-wider">Entry</p><p className="text-xl font-bold font-display">₹{event.price ?? 499}</p></div>
-        <ClayButton className="px-8" variant="primary" onClick={() => setIsCheckoutOpen(true)}>Book Now</ClayButton>
+        <ClayButton className="px-8" variant="primary" onClick={handleBookingClick}>Book Now</ClayButton>
       </div>
 
       <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} eventName={event.title} eventId={event.id} price={event.price ?? 499} />

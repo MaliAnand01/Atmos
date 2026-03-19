@@ -32,9 +32,15 @@ export default function FloatingNav() {
   const fetchNotifs = async () => {
     if (!user) return;
     try {
-      const { count } = await api.get(`/notifications/${user.id}/unread-count`);
+      const countRes = await api.get(`/notifications/${user.id}/unread-count`);
       const list = await api.get(`/notifications/${user.id}`);
-      dispatch({ type: 'SET_NOTIFICATIONS', payload: { count, list: list.slice(0, 5) } });
+      dispatch({ 
+        type: 'SET_NOTIFICATIONS', 
+        payload: { 
+          count: countRes?.count ?? 0, 
+          list: Array.isArray(list) ? list.slice(0, 5) : [] 
+        } 
+      });
     } catch (err) {}
   };
 

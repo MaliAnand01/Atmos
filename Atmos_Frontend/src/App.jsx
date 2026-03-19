@@ -41,7 +41,7 @@ function AnimatedRoutes() {
       <AuthModal 
         isOpen={isAuthModalOpen} 
         onClose={() => dispatch({ type: 'SET_AUTH_MODAL', payload: false })} 
-        onSuccess={() => dispatch({ type: 'SET_AUTH', payload: { isAuthenticated: true } })}
+        onSuccess={() => dispatch({ type: 'SET_AUTH', payload: { isAuthenticated: true, user: JSON.parse(localStorage.getItem('atmos_user') || 'null') } })}
       />
     </>
   );

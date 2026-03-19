@@ -11,6 +11,9 @@ import { useUI } from "../context/UIContext";
 import VibePillars from "../components/VibePillars";
 import WeekendOutlook from "../components/WeekendOutlook";
 import AtmosStories from "../components/AtmosStories";
+import { useNavigate } from "react-router-dom";
+import { ArrowUpRight, MousePointer2, ChevronDown } from "lucide-react";
+import toast from "react-hot-toast";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -25,10 +28,14 @@ export default function Home() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [siteStats, setSiteStats] = useState({ events: 0, venues: 0, bookings: 0 });
+  const [showVibeHint, setShowVibeHint] = useState(false);
+  const [showScrollHint, setShowScrollHint] = useState(false);
   
+  const navigate = useNavigate();
   const containerRef = useRef(null);
   const venuesSectionRef = useRef(null);
   const orbsRef = useRef(null);
+  const scrollHintRef = useRef(null);
 
   const fetchEventsByVibe = useCallback(async (level) => {
     try {
@@ -46,6 +53,13 @@ export default function Home() {
   useEffect(() => {
     fetchEventsByVibe(vibeLevel);
     api.get('/stats').then(data => setSiteStats(data)).catch(() => {});
+
+    // Check for first-time visitor vibe discovery
+    const hasSeenHint = localStorage.getItem("atmos_vibe_hint_seen");
+    if (!hasSeenHint) {
+      const timer = setTimeout(() => setShowVibeHint(true), 2000);
+      return () => clearTimeout(timer);
+    }
   }, [fetchEventsByVibe, vibeLevel]);
 
   // State to hold the GSAP context for vibe changes to allow cleanup
@@ -53,6 +67,17 @@ export default function Home() {
 
   const handleVibeChange = useCallback((level) => {
     dispatch({ type: 'SET_VIBE', payload: level });
+    
+    // Show scroll hint and toast
+    setShowScrollHint(true);
+    localStorage.setItem("atmos_vibe_hint_seen", "true");
+    setShowVibeHint(false);
+
+    toast.success(`Vibe tuned to level ${level}`, {
+      id: 'vibe-update',
+      icon: '✨',
+      duration: 3000,
+    });
     
     const colorStops = {
       chill: "radial-gradient(circle at center, rgba(0,240,255,0.08) 0%, rgba(13,15,20,1) 70%)",
@@ -149,7 +174,11 @@ export default function Home() {
             </div>
 
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.35 }}>
-              <VibeSlider onVibeChange={handleVibeChange} initialLevel={vibeLevel} />
+              <VibeSlider 
+                onVibeChange={handleVibeChange} 
+                initialLevel={vibeLevel} 
+                showHint={showVibeHint} 
+              />
             </motion.div>
 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="flex items-center gap-6 sm:gap-8 pt-2 flex-wrap">
@@ -176,12 +205,25 @@ export default function Home() {
               ) : events.length > 0 ? (
                 <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
                   {events.slice(0, 3).map((evt, i) => (
-                    <motion.div key={evt.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="flex gap-4 items-center bg-clay-surface/60 backdrop-blur-xl rounded-2xl border border-white/5 p-4 group cursor-pointer hover:border-white/20 hover:bg-clay-surface transition-all duration-300 shadow-clay">
+                    <motion.div 
+                      key={evt.id} 
+                      initial={{ opacity: 0, y: 20 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      transition={{ delay: i * 0.08 }} 
+                      onClick={() => navigate(`/event/${evt.id}`)}
+                      className="flex gap-4 items-center bg-clay-surface/60 backdrop-blur-xl rounded-2xl border border-white/5 p-4 group cursor-pointer hover:border-chill-blue/30 hover:bg-clay-surface transition-all duration-300 shadow-clay relative overflow-hidden"
+                    >
                       <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
                         <img src={getImageUrl(evt.imageUrl)} alt={evt.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       </div>
-                      <div className="flex-1 min-w-0"><p className="font-display font-bold text-white truncate">{evt.title}</p><p className="text-text-secondary text-sm">{evt.venue?.name}</p></div>
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border border-white/10" style={{ background: `hsl(${(evt.energyLevel / 10) * 300}, 80%, 60%)` }}>{evt.energyLevel}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-display font-bold text-white truncate group-hover:text-chill-blue transition-colors">{evt.title}</p>
+                        <p className="text-text-secondary text-sm">{evt.venue?.name}</p>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border border-white/10" style={{ background: `hsl(${(evt.energyLevel / 10) * 300}, 80%, 60%)` }}>{evt.energyLevel}</div>
+                        <ArrowUpRight size={14} className="text-white/20 group-hover:text-white transition-colors" />
+                      </div>
                     </motion.div>
                   ))}
                 </motion.div>
@@ -193,6 +235,29 @@ export default function Home() {
             </AnimatePresence>
           </div>
         </div>
+
+        {/* Post-Vibe Scroll Hint */}
+        <AnimatePresence>
+          {showScrollHint && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                document.getElementById('events-section')?.scrollIntoView({ behavior: 'smooth' });
+                setShowScrollHint(false);
+              }}
+              className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 cursor-pointer group flex flex-col items-center gap-2"
+            >
+              <span className="text-xs font-bold text-white uppercase tracking-[0.3em] bg-void/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/5 group-hover:border-white/20 transition-all">
+                Scroll to explore results
+              </span>
+              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-void animate-bounce shadow-clay">
+                <ChevronDown size={24} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       {/* Vibe Pillars: Value Props */}
@@ -213,7 +278,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="relative z-10 bg-void py-6 pb-12">
+      <div id="events-section" className="relative z-10 bg-void py-6 pb-12">
         <MemoizedEventCarousel events={events} />
       </div>
 

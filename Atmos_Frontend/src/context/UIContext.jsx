@@ -1,11 +1,12 @@
 import { createContext, useContext, useReducer, useMemo } from 'react';
+import { getUser, isLoggedIn } from '../services/authStore';
 
 const UIContext = createContext();
 
 const initialState = {
   vibeLevel: 5,
-  isAuthenticated: false,
-  userData: null,
+  isAuthenticated: isLoggedIn(),
+  userData: getUser(),
   isAuthModalOpen: false,
   notifications: [],
   unreadCount: 0,

@@ -44,9 +44,9 @@ public class EmailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
+            helper.setFrom(java.util.Objects.requireNonNull(fromEmail));
+            helper.setTo(java.util.Objects.requireNonNull(toEmail));
+            helper.setSubject(java.util.Objects.requireNonNull(subject));
             helper.setText(content, true);
             mailSender.send(message);
             System.out.println("[DIAGNOSTIC] OTP Email sent successfully to " + toEmail);
@@ -60,8 +60,8 @@ public class EmailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, false);
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
+            helper.setFrom(java.util.Objects.requireNonNull(fromEmail));
+            helper.setTo(java.util.Objects.requireNonNull(toEmail));
             helper.setSubject("Atmos Mail Diagnostic Test");
             helper.setText("If you see this, your SMTP configuration is working correctly on Render.");
             mailSender.send(message);

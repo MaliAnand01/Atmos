@@ -12,18 +12,8 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    @org.springframework.beans.factory.annotation.Value("${spring.mail.username:null}")
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.username}")
     private String fromEmail;
-
-    @jakarta.annotation.PostConstruct
-    public void validateConfig() {
-        if (fromEmail == null || fromEmail.equals("null") || fromEmail.isEmpty()) {
-            System.err.println("[DIAGNOSTIC] CRITICAL: spring.mail.username is NOT set! Check your environment variables.");
-        } else {
-            String masked = fromEmail.charAt(0) + "****" + fromEmail.substring(fromEmail.indexOf("@"));
-            System.out.println("[DIAGNOSTIC] Mail Service initialized with sender: " + masked);
-        }
-    }
 
     @org.springframework.scheduling.annotation.Async
     public void sendOtpEmail(String toEmail, String otp) {
@@ -49,27 +39,8 @@ public class EmailService {
             helper.setSubject(java.util.Objects.requireNonNull(subject));
             helper.setText(content, true);
             mailSender.send(message);
-            System.out.println("[DIAGNOSTIC] OTP Email sent successfully to " + toEmail);
         } catch (Exception e) {
-            System.err.println("[DIAGNOSTIC] ERROR: Failed to send OTP email to " + toEmail);
-            e.printStackTrace(); // Log full stack trace to Render dashboard
-        }
-    }
-
-    public String sendTestEmail(String toEmail) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, false);
-            helper.setFrom(java.util.Objects.requireNonNull(fromEmail));
-            helper.setTo(java.util.Objects.requireNonNull(toEmail));
-            helper.setSubject("Atmos Mail Diagnostic Test");
-            helper.setText("If you see this, your SMTP configuration is working correctly on Render.");
-            mailSender.send(message);
-            return "SUCCESS: Test email sent to " + toEmail;
-        } catch (Exception e) {
-            java.io.StringWriter sw = new java.io.StringWriter();
-            e.printStackTrace(new java.io.PrintWriter(sw));
-            return "FAILURE: " + e.getMessage() + "\n\nStack Trace:\n" + sw.toString();
+            System.err.println("Error sending OTP email: " + e.getMessage());
         }
     }
 }

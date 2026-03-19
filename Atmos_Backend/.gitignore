@@ -7,8 +7,9 @@ target/
 ### Custom for Atmos ###
 uploads/
 *.log
-body.txt
-headers.txt
+*.txt
+.env
+run-backend.ps1
 
 ### STS ###
 .apt_generated

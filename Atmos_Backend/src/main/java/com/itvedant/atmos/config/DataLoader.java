@@ -5,8 +5,10 @@ import com.itvedant.atmos.Entity.User;
 import com.itvedant.atmos.Entity.Venue;
 import com.itvedant.atmos.Repo.BookingRepository;
 import com.itvedant.atmos.Repo.EventRepository;
+import com.itvedant.atmos.Repo.NotificationRepository;
 import com.itvedant.atmos.Repo.UserRepository;
 import com.itvedant.atmos.Repo.VenueRepository;
+import com.itvedant.atmos.Repo.WishlistRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +26,8 @@ public class DataLoader {
             VenueRepository venueRepository,
             EventRepository eventRepository,
             BookingRepository bookingRepository,
+            WishlistRepository wishlistRepository,
+            NotificationRepository notificationRepository,
             PasswordEncoder passwordEncoder) {
         return args -> {
             System.out.println("Seeding Atmos Database...");
@@ -81,7 +85,9 @@ public class DataLoader {
             }
 
             // Seed Events
+            wishlistRepository.deleteAll(); // Force clear dependent data
             bookingRepository.deleteAll(); // Clear dependencies first
+            notificationRepository.deleteAll(); // Clear logs
             eventRepository.deleteAll(); // Force re-seed with new fields
             if (eventRepository.count() == 0) {
                 List<Venue> venues = venueRepository.findAll();
@@ -89,32 +95,66 @@ public class DataLoader {
 
                 Event e1 = createEvent("Midnight Techno", "High BPM till 4 AM", "Neon Dreams & Dark Bass", "21+",
                         "All Black / Clubwear", "Strict Entry / Valid ID", 10, 5, 800, venues.get(0), orgId, 799.0,
-                        "Techno");
-                Event e2 = createEvent("Morning Chai", "Classical flute sessions", "Start Your Day With Peace",
-                        "All Ages", "Casual", "Free Entry", 2, 2, 100, venues.get(1), orgId, 199.0, "Classical");
-                Event e3 = createEvent("Indie Rock Night", "Local Mumbai bands", "Support Local Talent", "18+",
-                        "Indie / Casual", "No outside drinks", 7, 10, 400, venues.get(3), orgId, 499.0, "Live Music");
-                Event e4 = createEvent("Acoustic Sunset", "Unplugged covers", "Golden Hour Melodies", "All Ages",
+                        "Techno", "https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80", 
+                        "Charlotte de Witte", "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80", 
+                        "A Techno phenom and one of the most significant names in the electronic music world today. Belgian DJ and record producer charlotte de witte is best known for her 'dark and stripped-back' style of minimal techno and acid techno.", "Vibrate Tour");
+                
+                Event e2 = createEvent("Morning Chai", "Classical sitar and flute sessions", "Start Your Day With Peace",
+                        "All Ages", "Casual", "Free Entry", 2, 2, 100, venues.get(1), orgId, 199.0, "Classical", 
+                        "https://images.unsplash.com/photo-1563294021-e7f17aaaa0ed?w=800&q=80", 
+                        "Niladri Kumar", "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80", 
+                        "A world-renowned global Indian musician and sitar player, widely recognized for his unconventional style and contribution to the 'Zitar' fusion movement.", null);
+                
+                Event e3 = createEvent("Indie Rock Night", "The Best of Mumbai's Indie scene", "Support Local Talent", "18+",
+                        "Indie / Casual", "No outside drinks", 7, 10, 400, venues.get(3), orgId, 499.0, "Live Music", 
+                        "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&q=80", 
+                        "The Yellow Diary", "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&q=80", 
+                        "A collective of five musicians, The Yellow Diary is a soulful alt-rock band from Mumbai, known for their unique blend of meaningful lyrics and contemporary soundscapes.", null);
+                
+                Event e4 = createEvent("Acoustic Sunset", "Unplugged covers and soulful melodies", "Golden Hour Melodies", "All Ages",
                         "Smart Casual", "Restricted entry after 7PM", 3, 3, 250, venues.get(4), orgId, 349.0,
-                        "Acoustic");
-                Event e5 = createEvent("Bollywood EDM", "Desi-fusion drops", "The Ultimate Desi Party", "21+",
-                        "Traditional / Party", "Stags not allowed", 9, 30, 5000, venues.get(2), orgId, 999.0, "EDM");
-                Event e6 = createEvent("Jazz & Soul", "Evening of smooth jazz", "Elegant Notes & Wine", "18+",
-                        "Formal / Smart", "Table reservations only", 4, 15, 100, venues.get(6), orgId, 599.0, "Jazz");
-                Event e7 = createEvent("Soulful Sufi", "Traditional sufi music", "A Spiritual Musical Journey",
+                        "Acoustic", "https://images.unsplash.com/photo-1459749411177-042180ceea72?w=800&q=80", 
+                        "Anuv Jain", "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80", 
+                        "Indian singer-songwriter and composer widely recognized for his soulful baritone and minimal production that highlights emotional storytelling.", null);
+                
+                Event e5 = createEvent("Bollywood EDM", "Desi-fusion drops and high energy", "The Ultimate Desi Party", "21+",
+                        "Traditional / Party", "Stags not allowed", 9, 30, 5000, venues.get(2), orgId, 999.0, "EDM", 
+                        "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800&q=80", 
+                        "Nucleya", "https://images.unsplash.com/photo-1520127873598-bb028738988a?w=400&q=80", 
+                        "The pioneer of native bass music in India, Udyan Sagar aka Nucleya is a name that is synonymous with cutting-edge electronic sounds in the Indian independent music scene.", "Koocha Monster Tour");
+                
+                Event e6 = createEvent("Jazz & Soul", "Evening of smooth jazz and cocktails", "Elegant Notes & Wine", "18+",
+                        "Formal / Smart", "Table reservations only", 4, 15, 100, venues.get(6), orgId, 599.0, "Jazz", 
+                        "https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=800&q=80", 
+                        "Louiz Banks", "https://images.unsplash.com/photo-1525650603414-85750fcfa6c4?w=400&q=80", 
+                        "Known as the Godfather of Indian Jazz, Louiz Banks is a legendary keyboardist and composer who has pioneered jazz and fusion in India for five decades.", null);
+                
+                Event e7 = createEvent("Hare Krishna Kirtan Festival", "Transcendental vibration of the Lord's Holy Name", "Sacred Harmonies & Bhakti",
                         "All Ages", "Modest", "Silence requested during performance", 5, 20, 1500, venues.get(5), orgId,
-                        450.0, "Sufi");
-                Event e8 = createEvent("Retro Disco", "Back to the 80s", "Glow Sticks & Disco Balls", "18+",
-                        "Retro / Funky", "Costumes encouraged", 8, 12, 574, venues.get(7), orgId, 299.0, "Pop");
-                Event e9 = createEvent("Indie Cinema", "Screening of local talent", "Discover New Perspectives", "12+",
-                        "Casual", "Popcorn provided", 1, 7, 300, venues.get(8), orgId, 150.0, "Workshop");
-                Event e10 = createEvent("Sunset Yoga", "Meditation on the turf", "Align Your Energy", "All Ages",
-                        "Activewear", "Bring your own mat", 1, 4, 50, venues.get(9), orgId, 99.0, "Workshop");
+                        450.0, "Sufi", "https://images.unsplash.com/photo-1465821185615-20b3c2fbf41b?w=800&q=80", 
+                        "Jahnavi Harrison", "https://images.unsplash.com/photo-1517230110316-3a5214739572?w=400&q=80", 
+                        "Jahnavi Harrison’s music is inspired by her upbringing in the bhakti yoga tradition. She has performed globally, sharing the practice of mantra meditation and kirtan with diverse audiences.", "Transcendental Vibration Tour");
+                
+                Event e8 = createEvent("Retro Disco", "Back to the 80s with glow sticks", "Glow Sticks & Disco Balls", "18+",
+                        "Retro / Funky", "Costumes encouraged", 8, 12, 574, venues.get(7), orgId, 299.0, "Pop", 
+                        "https://images.unsplash.com/photo-1505842465776-3b4952ca405b?w=800&q=80", 
+                        "The Disco Kings", "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&q=80", 
+                        "A dynamic tribute band bringing the high-octane energy of the 70s and 80s disco floor back to life with authentic costumes and groovy beats.", null);
+                
+                Event e9 = createEvent("Indie Cinema", "Screening of local award-winning talent", "Discover New Perspectives", "12+",
+                        "Casual", "Popcorn provided", 1, 7, 300, venues.get(8), orgId, 150.0, "Workshop", 
+                        "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&q=80", 
+                        "Anand Gandhi", "https://images.unsplash.com/photo-1520127873598-bb028738988a?w=400&q=80", 
+                        "A visionary Indian filmmaker and screenwriter known for 'Ship of Theseus'. He joins for an exclusive masterclass and screening of his latest works.", "Cinema Masterclass");
+                
+                Event e10 = createEvent("Sunset Yoga", "Guided meditation on the turf", "Align Your Energy", "All Ages",
+                        "Activewear", "Bring your own mat", 1, 4, 50, venues.get(9), orgId, 99.0, "Workshop", 
+                        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80", 
+                        "Radhanath Swami", "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80", 
+                        "A guide and author who has shared the message of spiritual wisdom and bhakti yoga globally. He leads this special sunset meditation session.", null);
 
                 eventRepository.saveAll(Objects.requireNonNull(List.of(e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)));
             }
-
-            System.out.println("Seeding Successfully Completed!");
         };
     }
 
@@ -128,7 +168,8 @@ public class DataLoader {
     }
 
     private Event createEvent(String title, String desc, String tagline, String age, String dress, String door,
-            int energy, int daysOut, int cap, Venue v, Long orgId, double price, String category) {
+            int energy, int daysOut, int cap, Venue v, Long orgId, double price, String category, String imageUrl, 
+            String performer, String pImage, String pBio, String tour) {
         Event e = new Event();
         e.setTitle(title);
         e.setDescription(desc);
@@ -142,9 +183,13 @@ public class DataLoader {
         e.setAvailableCapacity(cap - 10);
         e.setVenue(v);
         e.setOrganizerId(orgId);
-        e.setImageUrl(v.getImageUrl());
+        e.setImageUrl(imageUrl);
         e.setPrice(price);
         e.setCategory(category);
+        e.setPerformerName(performer);
+        e.setPerformerImage(pImage);
+        e.setPerformerBio(pBio);
+        e.setTourName(tour);
         return e;
     }
-}
+}

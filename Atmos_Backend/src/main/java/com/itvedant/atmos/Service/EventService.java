@@ -142,6 +142,12 @@ public class EventService {
         if (updates.getDoorPolicy() != null) event.setDoorPolicy(updates.getDoorPolicy());
         if (updates.getActive() != null) event.setActive(updates.getActive());
         
+        // Performer Information
+        if (updates.getPerformerName() != null) event.setPerformerName(updates.getPerformerName());
+        if (updates.getPerformerImage() != null) event.setPerformerImage(updates.getPerformerImage());
+        if (updates.getPerformerBio() != null) event.setPerformerBio(updates.getPerformerBio());
+        if (updates.getTourName() != null) event.setTourName(updates.getTourName());
+        
         return eventRepository.save(Objects.requireNonNull(event));
     }
 

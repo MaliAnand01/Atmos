@@ -12,7 +12,7 @@ import VibePillars from "../components/VibePillars";
 import WeekendOutlook from "../components/WeekendOutlook";
 import AtmosStories from "../components/AtmosStories";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, MousePointer2, ChevronDown } from "lucide-react";
+import { ArrowUpRight, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 
 gsap.registerPlugin(ScrollTrigger);

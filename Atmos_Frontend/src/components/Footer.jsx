@@ -30,7 +30,6 @@ export default function Footer() {
   const onSubscribe = async (data) => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log("Subscribed:", data.email);
     setSubscribed(true);
     reset();
     setTimeout(() => setSubscribed(false), 3000);

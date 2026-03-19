@@ -68,4 +68,17 @@ public class Event {
 
     @Column(name = "is_active", nullable = false)
     private Boolean active = true;
+
+    // Performer/Artist Information
+    @Column(name = "performer_name")
+    private String performerName;
+
+    @Column(name = "performer_image", length = 1000)
+    private String performerImage;
+
+    @Column(name = "performer_bio", columnDefinition = "TEXT")
+    private String performerBio;
+
+    @Column(name = "tour_name")
+    private String tourName;
 }

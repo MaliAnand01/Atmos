@@ -173,6 +173,48 @@ export default function EventDetail() {
             )}
             <p className="text-text-secondary text-lg leading-relaxed font-body">{event.description || "No description provided."}</p>
           </motion.div>
+
+          {/* Artist Spotlight Section */}
+          {(event.performerName || event.performerBio) && (
+            <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }} className="relative group">
+               <div className="absolute -inset-4 bg-gradient-to-r from-chill-blue/5 via-energy-pink/5 to-transparent blur-2xl rounded-[3rem] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -z-10" />
+               <div className="flex items-center gap-3 mb-6">
+                 <div className="w-1.5 h-8 bg-chill-blue rounded-full" />
+                 <h2 className="text-2xl font-display font-bold">Artist Spotlight</h2>
+               </div>
+               
+               <ClayCard className="p-8 md:p-10 border-white/10 relative overflow-hidden">
+                  <div className="flex flex-col md:flex-row gap-10 items-center md:items-start text-center md:text-left">
+                     {event.performerImage && (
+                        <div className="relative shrink-0">
+                           <div className="w-40 h-40 md:w-56 md:h-56 rounded-3xl overflow-hidden shadow-2xl relative z-10 border border-white/10 group-hover:border-chill-blue/30 transition-colors duration-500">
+                              <img src={getImageUrl(event.performerImage)} alt={event.performerName} className="w-full h-full object-cover grayscale-[0.2] hover:grayscale-0 transition-all duration-700" />
+                           </div>
+                           <div className="absolute -inset-2 bg-chill-blue/20 blur-xl rounded-full mix-blend-screen opacity-50 animate-pulse" />
+                        </div>
+                     )}
+                     
+                     <div className="flex-1 space-y-6">
+                        <div className="space-y-1">
+                           {event.tourName && (
+                              <span className="text-chill-blue text-[10px] font-bold uppercase tracking-[0.4em] mb-2 block">{event.tourName}</span>
+                           )}
+                           <h3 className="text-3xl md:text-5xl font-display font-bold text-white tracking-tight">{event.performerName || "Featured Artist"}</h3>
+                        </div>
+                        
+                        <p className="text-text-secondary text-base md:text-lg leading-relaxed font-body italic">
+                           {event.performerBio || "Biography coming soon..."}
+                        </p>
+                        
+                        <div className="pt-4 flex flex-wrap justify-center md:justify-start gap-4">
+                           <button className="px-6 py-2 rounded-full border border-white/5 bg-white/5 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest transition-all">View Discography</button>
+                           <button className="px-6 py-2 rounded-full border border-chill-blue/20 bg-chill-blue/5 hover:bg-chill-blue/10 text-chill-blue text-[10px] font-bold uppercase tracking-widest transition-all">Tour Schedule</button>
+                        </div>
+                     </div>
+                  </div>
+               </ClayCard>
+            </motion.div>
+          )}
           
           <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}>
             <h2 className="text-2xl font-display font-bold mb-6">Know Before You Go</h2>

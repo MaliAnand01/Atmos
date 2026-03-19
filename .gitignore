@@ -26,6 +26,6 @@ docs/
 # Atmos Specific
 Atmos_Backend/uploads/
 *.log
-Atmos_Backend/body.txt
-Atmos_Backend/headers.txt
-Atmos_Backend/backend.log
+*.txt
+.env
+run-backend.ps1

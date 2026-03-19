@@ -36,6 +36,10 @@ const eventSchema = z.object({
     ageLimit: z.string().optional(),
     dressCode: z.string().optional(),
     doorPolicy: z.string().optional(),
+    performerName: z.string().optional(),
+    performerImage: z.string().optional(),
+    performerBio: z.string().optional(),
+    tourName: z.string().optional(),
 });
 
 export default function OrganizerView() {
@@ -121,7 +125,9 @@ export default function OrganizerView() {
         } else if (step === 2) {
             isStepValid = await trigger(["energyLevel", "capacity", "price", "venueId", "dateTime"]);
         } else if (step === 3) {
-            // Step 3 — image URL + publish
+            isStepValid = await trigger(["ageLimit", "dressCode", "doorPolicy", "imageUrl"]);
+        } else if (step === 4) {
+            // Step 4 — performer details + publish
             await handleSubmit(handleFinalPublish)();
             return;
         }
@@ -152,6 +158,10 @@ export default function OrganizerView() {
                 ageLimit: data.ageLimit,
                 dressCode: data.dressCode,
                 doorPolicy: data.doorPolicy,
+                performerName: data.performerName,
+                performerImage: data.performerImage,
+                performerBio: data.performerBio,
+                tourName: data.tourName,
             };
 
             await api[editingEventId ? 'put' : 'post'](
@@ -187,6 +197,10 @@ export default function OrganizerView() {
             ageLimit: event.ageLimit || "",
             dressCode: event.dressCode || "",
             doorPolicy: event.doorPolicy || "",
+            performerName: event.performerName || "",
+            performerImage: event.performerImage || "",
+            performerBio: event.performerBio || "",
+            tourName: event.tourName || "",
         });
         setStep(1);
     };
@@ -218,6 +232,10 @@ export default function OrganizerView() {
             ageLimit: "",
             dressCode: "",
             doorPolicy: "",
+            performerName: "",
+            performerImage: "",
+            performerBio: "",
+            tourName: "",
         });
         setStep(1);
     };
@@ -502,6 +520,30 @@ export default function OrganizerView() {
                                     </motion.div>
                                 )}
                                 {step === 4 && (
+                                    <motion.div key="step4" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
+                                        <div className="flex items-center gap-2 mb-2 text-chill-blue">
+                                            <Info size={14} />
+                                            <span className="text-[10px] font-bold uppercase tracking-widest">Artist Spotlight</span>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Artist/Performer Name</label>
+                                            <input {...register("performerName")} placeholder="e.g. Jahnavi Harrison" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Tour Name (Optional)</label>
+                                            <input {...register("tourName")} placeholder="e.g. Transcendental Vibrations" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Artist Bio</label>
+                                            <textarea {...register("performerBio")} rows={3} placeholder="Tell us about the artist..." className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body resize-none" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Artist Photo URL</label>
+                                            <input {...register("performerImage")} placeholder="Link to artist photo" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
+                                        </div>
+                                    </motion.div>
+                                )}
+                                {step === 5 && (
                                     <motion.div key="step4" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center justify-center text-center py-8">
                                         {publishSuccess ? (
                                             <>
@@ -528,7 +570,7 @@ export default function OrganizerView() {
                         </div>
 
                         <div className="flex gap-3 mt-8 border-t border-white/5 pt-6">
-                            {step < 4 && (
+                            {step < 5 && (
                                 <>
                                     <ClayButton 
                                         variant="secondary" 
@@ -541,9 +583,9 @@ export default function OrganizerView() {
                                     <ClayButton 
                                         variant="primary" 
                                         onClick={nextStep} 
-                                        className={`flex-1 text-xs py-2 shadow-lg transition-all ${step === 3 ? "bg-chill-blue text-void hover:shadow-[0_0_20px_rgba(0,240,255,0.4)]" : "bg-white text-void"}`}
+                                        className={`flex-1 text-xs py-2 shadow-lg transition-all ${step === 4 ? "bg-chill-blue text-void hover:shadow-[0_0_20px_rgba(0,240,255,0.4)]" : "bg-white text-void"}`}
                                     >
-                                        {step === 3 ? (editingEventId ? "Save Changes" : "Publish Event") : "Next"}
+                                        {step === 4 ? (editingEventId ? "Save Changes" : "Publish Event") : "Next"}
                                     </ClayButton>
                                 </>
                             )}

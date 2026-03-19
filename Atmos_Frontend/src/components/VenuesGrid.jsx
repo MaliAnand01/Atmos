@@ -50,15 +50,14 @@ export default function VenuesGrid() {
 
   useEffect(() => {
     if (!loading && venues.length > 0) {
-      // Clear previous triggers
+      // 1. Reset and Kill previous triggers
+      cardsRef.current = cardsRef.current.filter(Boolean); // Clean up any nulls first
+      
       ScrollTrigger.getAll().forEach(t => {
-        if (t.vars.id === 'venuesGrid') t.kill();
+        if (t.vars.id?.includes('venuesGrid')) t.kill();
       });
 
-      // Kill any previous animations on cards
-      cardsRef.current.forEach(card => {
-        if (card) gsap.set(card, { clearProps: "all" });
-      });
+      // 2. Initial sequence for grid entry
 
       // Entry animation for cards
       gsap.fromTo(cardsRef.current, 
@@ -97,9 +96,10 @@ export default function VenuesGrid() {
           const button = card.querySelector('.action-btn');
 
           ScrollTrigger.create({
+            id: `venuesGrid-mobile-${i}`,
             trigger: card,
-            start: "top center+=150",
-            end: "bottom center-=150",
+            start: "top 85%",
+            end: "bottom 15%",
             onEnter: () => {
               gsap.to(img, { scale: 1.1, duration: 0.6, ease: "power2.out" });
               gsap.to(overlay, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" });
@@ -138,6 +138,9 @@ export default function VenuesGrid() {
       cardsRef.current.push(el);
     }
   };
+
+  // Reset refs before rendering to avoid growing arrays
+  cardsRef.current = [];
 
   return (
     <div className="w-full max-w-7xl mx-auto px-6 py-20 overflow-hidden" ref={containerRef}>

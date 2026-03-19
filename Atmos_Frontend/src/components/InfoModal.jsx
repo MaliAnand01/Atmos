@@ -102,7 +102,7 @@ export default function InfoModal({ type, isOpen, onClose }) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -116,38 +116,38 @@ export default function InfoModal({ type, isOpen, onClose }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="w-full max-w-2xl relative"
+            className="w-full max-w-2xl relative max-h-[85vh] md:max-h-none flex flex-col"
           >
-            <ClayCard className="p-0 overflow-hidden border border-white/10 shadow-2xl relative">
+            <ClayCard className="p-0 overflow-hidden border border-white/10 shadow-2xl relative flex flex-col h-full md:h-auto">
                 {/* Header Section */}
-                <div className="p-8 sm:p-12 pb-6 border-b border-white/5 bg-white/[0.02] flex flex-col items-center text-center">
+                <div className="p-6 sm:p-12 pb-5 sm:pb-8 border-b border-white/5 bg-white/[0.02] flex flex-col items-center text-center shrink-0">
                     <button 
                         onClick={onClose}
-                        className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 text-text-secondary hover:text-white transition-all shadow-clay"
+                        className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 rounded-full hover:bg-white/5 text-text-secondary hover:text-white transition-all shadow-clay z-10"
                     >
                         <X size={20} />
                     </button>
                     
-                    <div className="mb-4 p-4 rounded-[2rem] bg-white/[0.03] shadow-inner border border-white/5">
+                    <div className="mb-3 sm:mb-4 p-3 sm:p-4 rounded-[1.5rem] sm:rounded-[2rem] bg-white/[0.03] shadow-inner border border-white/5">
                         {data.icon}
                     </div>
                     
-                    <h2 className="text-3xl font-display font-bold text-text-primary mb-2 tracking-tight">
+                    <h2 className="text-2xl sm:text-3xl font-display font-bold text-text-primary mb-1 sm:mb-2 tracking-tight">
                         {data.title}
                     </h2>
-                    <p className="text-chill-blue text-[10px] font-bold uppercase tracking-[0.2em]">
+                    <p className="text-chill-blue text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em]">
                         {data.subtitle}
                     </p>
                 </div>
 
                 {/* Body Content */}
-                <div className="p-8 sm:p-12 pt-10 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div className="p-6 sm:p-12 pt-8 sm:pt-10 flex-1 overflow-y-auto custom-scrollbar">
                     {data.body}
                 </div>
 
                 {/* Footer Deco */}
-                <div className="p-4 border-t border-white/5 bg-void/40 flex justify-center">
-                    <p className="text-text-secondary/20 text-[10px] uppercase font-bold tracking-widest">Atmos Protocol</p>
+                <div className="p-3 sm:p-4 border-t border-white/5 bg-void/40 flex justify-center shrink-0">
+                    <p className="text-text-secondary/20 text-[9px] sm:text-[10px] uppercase font-bold tracking-widest">Atmos Protocol</p>
                 </div>
             </ClayCard>
           </motion.div>

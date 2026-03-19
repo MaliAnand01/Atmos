@@ -132,14 +132,18 @@ export default function FloatingNav() {
 
               <AnimatePresence>
                 {showNotif && (
-                  <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute bottom-full mb-4 right-0 md:bottom-auto md:top-full md:mt-4 w-72 z-50">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }} 
+                    animate={{ opacity: 1, y: 0, scale: 1 }} 
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] left-4 right-4 md:absolute md:bottom-full md:mb-4 md:left-auto md:right-0 md:translate-x-0 md:bottom-auto md:top-full md:mt-4 md:w-72 z-50 md:max-w-sm"
+                  >
                     <ClayCard className="p-0 overflow-hidden border border-white/10 shadow-2xl bg-void/90 backdrop-blur-2xl">
                         <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">Notifications</span>
                             {unreadCount > 0 && <span className="text-[10px] text-chill-blue font-bold">{unreadCount} New</span>}
                         </div>
-                        <div className="max-h-80 overflow-y-auto">
+                        <div className="max-h-80 overflow-y-auto scrollbar-hide">
                             {notifications.length === 0 ? (
                                 <div className="p-8 text-center text-text-secondary text-xs italic">No recent notifications.</div>
                             ) : (

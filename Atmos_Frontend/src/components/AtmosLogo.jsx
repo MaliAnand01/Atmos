@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 // Atmos brand logo — inline SVG / wordmark
 export default function AtmosLogo({ size = "md", className = "" }) {
   const sizes = {
@@ -8,7 +10,7 @@ export default function AtmosLogo({ size = "md", className = "" }) {
   const s = sizes[size] || sizes.md;
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <Link to="/" className={`flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity ${className}`}>
       {/* Ring mark */}
       <svg
         width={s.ring}
@@ -38,6 +40,6 @@ export default function AtmosLogo({ size = "md", className = "" }) {
       >
         Atmos
       </span>
-    </div>
+    </Link>
   );
 }

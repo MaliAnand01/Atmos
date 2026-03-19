@@ -391,7 +391,72 @@ export default function OrganizerView() {
                                 )}
                                 {step === 2 && (
                                     <motion.div key="step2" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-3 pt-2">
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Select Venue</label>
+                                            <select 
+                                                {...register("venueId")}
+                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all text-sm font-body appearance-none"
+                                            >
+                                                {venues.map(v => (
+                                                    <option key={v.id} value={v.id.toString()}>{v.name} - {v.address}</option>
+                                                ))}
+                                            </select>
+                                            {errors.venueId && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.venueId.message}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Date & Time</label>
+                                            <input 
+                                                {...register("dateTime")}
+                                                type="datetime-local" 
+                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all text-sm font-body" 
+                                            />
+                                            {errors.dateTime && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.dateTime.message}</p>}
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Capacity</label>
+                                                <input 
+                                                    {...register("capacity")}
+                                                    type="number" 
+                                                    className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all text-sm font-body" 
+                                                    placeholder="100"
+                                                />
+                                                {errors.capacity && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.capacity.message}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Price (₹)</label>
+                                                <input 
+                                                    {...register("price")}
+                                                    type="number" 
+                                                    className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all text-sm font-body" 
+                                                    placeholder="499"
+                                                />
+                                                {errors.price && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.price.message}</p>}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary block font-body">Energy Level</label>
+                                                <span className="text-xs font-bold text-chill-blue">Level {energyLevel}</span>
+                                            </div>
+                                            <input 
+                                                {...register("energyLevel")}
+                                                type="range" 
+                                                min="1" 
+                                                max="10" 
+                                                className="w-full h-1.5 bg-void rounded-lg appearance-none cursor-pointer accent-chill-blue border border-white/5"
+                                            />
+                                            <div className="flex justify-between text-[8px] text-text-secondary font-bold uppercase mt-1">
+                                                <span>Chill</span>
+                                                <span>Balanced</span>
+                                                <span>High Energy</span>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                                {step === 3 && (
+                                    <motion.div key="step3" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-3">
                                             <div>
                                                 <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Age Limit</label>
                                                 <input {...register("ageLimit")} placeholder="e.g. 21+" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
@@ -405,14 +470,10 @@ export default function OrganizerView() {
                                             <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Door Policy</label>
                                             <input {...register("doorPolicy")} placeholder="e.g. Carry valid ID" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
                                         </div>
-                                    </motion.div>
-                                )}
-                                {step === 3 && (
-                                    <motion.div key="step3" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
                                         <div>
                                             <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Event Image URL</label>
                                             <div className="relative">
-                                                <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                                                <Plus size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
                                                 <input
                                                     {...register("imageUrl")}
                                                     type="url"
@@ -423,7 +484,7 @@ export default function OrganizerView() {
                                             {errors.imageUrl && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.imageUrl.message}</p>}
                                         </div>
                                         {/* Live preview */}
-                                        <div className="w-full h-40 rounded-xl overflow-hidden border border-white/5 bg-void flex items-center justify-center">
+                                        <div className="w-full h-32 rounded-xl overflow-hidden border border-white/5 bg-void flex items-center justify-center">
                                             {watch("imageUrl") ? (
                                                 <img
                                                     src={watch("imageUrl")}
@@ -438,7 +499,6 @@ export default function OrganizerView() {
                                                 </div>
                                             )}
                                         </div>
-                                        <p className="text-[10px] text-text-secondary opacity-50 font-body">Leave blank to use a default image. Use any public image URL (Unsplash, Imgur, etc.)</p>
                                     </motion.div>
                                 )}
                                 {step === 4 && (

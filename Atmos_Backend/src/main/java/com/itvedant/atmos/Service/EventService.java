@@ -32,18 +32,18 @@ public class EventService {
         return eventRepository.findAllByActiveTrue();
     }
 
-    /** Paginated events for Discover page */
+    // paginated
     public Page<Event> getAllEventsPaged(Pageable pageable) {
         return eventRepository.findAllByActiveTrue(Objects.requireNonNull(pageable));
     }
 
-    /** Search by title or venue */
+    // search
     public List<Event> searchEvents(String query) {
         if (query == null || query.isBlank()) return getAllEvents();
         return eventRepository.searchByTitleOrVenue(query.trim());
     }
 
-    /** Filter by category */
+    // filter cat
     public List<Event> getEventsByCategory(String category) {
         if (category == null || category.isBlank() || category.equalsIgnoreCase("All"))
             return getAllEvents();
@@ -67,7 +67,7 @@ public class EventService {
         return eventRepository.findByVenueId(venueId);
     }
 
-    /** Filter by Vibe energy level (±2 range) */
+    // filter vibe
     public List<Event> getEventsByVibe(int vibeLevel) {
         return eventRepository.findByEnergyLevelBetween(
                 Math.max(1, vibeLevel - 2),
@@ -80,7 +80,7 @@ public class EventService {
             throw new RuntimeException("Event data must not be null");
         }
         
-        // Security: Verify organizer is approved
+        // check approval
         if (event.getOrganizerId() != null) {
             User organizer = userRepository.findById(Objects.requireNonNull(event.getOrganizerId()))
                 .orElseThrow(() -> new RuntimeException("Organizer not found"));
@@ -142,7 +142,7 @@ public class EventService {
         if (updates.getDoorPolicy() != null) event.setDoorPolicy(updates.getDoorPolicy());
         if (updates.getActive() != null) event.setActive(updates.getActive());
         
-        // Performer Information
+        // performer
         if (updates.getPerformerName() != null) event.setPerformerName(updates.getPerformerName());
         if (updates.getPerformerImage() != null) event.setPerformerImage(updates.getPerformerImage());
         if (updates.getPerformerBio() != null) event.setPerformerBio(updates.getPerformerBio());

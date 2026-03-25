@@ -3,20 +3,20 @@ import { AnimatePresence } from "framer-motion";
 import { ReactLenis } from 'lenis/react';
 import { Toaster } from "react-hot-toast";
 
-// Pages
+// pages
 import Home from "./pages/Home";
 import Discover from "./pages/Discover";
 import EventDetail from "./pages/EventDetail";
 import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
 
-// Components
+// components
 import FloatingNav from "./components/FloatingNav";
 import AuthModal from "./components/AuthModal";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import ScrollToTop from "./components/ScrollToTop";
 
-// Context
+// context
 import { UIProvider, useUI } from "./context/UIContext";
 import { isLoggedIn } from "./services/authStore";
 

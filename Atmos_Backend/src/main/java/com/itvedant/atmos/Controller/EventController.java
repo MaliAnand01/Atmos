@@ -22,7 +22,7 @@ public class EventController {
         this.eventService = eventService;
     }
 
-    /** Get all events (paginated) */
+    // get all
     @GetMapping
     public ResponseEntity<?> getAllEvents(
             @RequestParam(required = false) Integer page,
@@ -34,13 +34,13 @@ public class EventController {
         return ResponseEntity.ok(eventService.getAllEvents());
     }
 
-    /** Search events by title or venue */
+    // search events
     @GetMapping("/search")
     public List<Event> searchEvents(@RequestParam(name = "q", defaultValue = "") String query) {
         return eventService.searchEvents(query);
     }
 
-    /** List events by category */
+    // by category
     @GetMapping("/category")
     public List<Event> getByCategory(@RequestParam(name = "name", defaultValue = "All") String category) {
         return eventService.getEventsByCategory(category);

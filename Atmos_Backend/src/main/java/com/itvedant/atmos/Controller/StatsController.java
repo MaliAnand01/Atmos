@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-/** Stats for hero section */
+// hero stats
 @RestController
 @RequestMapping("/api/stats")
 public class StatsController {

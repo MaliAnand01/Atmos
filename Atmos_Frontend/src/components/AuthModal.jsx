@@ -11,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import toast from "react-hot-toast";
 
-// --- Validation Schemas ---
+// schemas
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -23,7 +23,7 @@ const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(["ROLE_USER", "ROLE_ORGANIZER"]),
-  // Organizer specific fields (optional by default, validated conditionally)
+  // for organizers
   organizationName: z.string().optional(),
   phone: z.string().optional(),
   panOrGstin: z.string().optional(),
@@ -59,7 +59,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
-  const [tempUser, setTempUser] = useState(null); // { id, email, password }
+  const [tempUser, setTempUser] = useState(null);
   const [otpValue, setOtpValue] = useState("");
   const navigate = useNavigate();
 
@@ -137,15 +137,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
         };
         userData = await api.post("/auth/register", payload);
         
-        // registration successful, now verify OTP
+        // go to otp screen
         setTempUser({ id: userData.id, email: userData.email, password: data.password });
         setMode("otp");
         toast.success("Registration successful! Check your email for OTP.");
         return;
       }
 
-      const token = btoa(`${userData.email}:${data.password}`);
-      localStorage.setItem("atmos_token", token);
+      localStorage.setItem("atmos_token", userData.token);
       saveAuth(userData);
 
       onClose();
@@ -175,14 +174,13 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
       
       toast.success("Email verified! Logging you in...");
       
-      // Auto-login after verification
+      // login after otp
       const userData = await api.post("/auth/login", { 
         email: tempUser.email, 
         password: tempUser.password 
       });
       
-      const token = btoa(`${userData.email}:${tempUser.password}`);
-      localStorage.setItem("atmos_token", token);
+      localStorage.setItem("atmos_token", userData.token);
       saveAuth(userData);
 
       onClose();
@@ -249,7 +247,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
 
             <div className="p-6 sm:p-8 flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <AnimatePresence custom={direction} mode="popLayout" initial={false}>
-                {/* ─── LOGIN ─── */}
+                {/* login */}
                 {mode === "login" ? (
                   <motion.div key="login" custom={direction} variants={variants} initial="initial" animate="animate" exit="exit" className="flex flex-col gap-6">
                     <div>
@@ -295,14 +293,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                   </motion.div>
 
                 ) : mode === "register" ? (
-                  /* ─── REGISTER ─── */
+                  /* register */
                   <motion.div key="register" custom={direction} variants={variants} initial="initial" animate="animate" exit="exit" className="flex flex-col gap-5">
                     <div>
                       <h2 className="text-3xl font-display font-bold">Join Atmos</h2>
                       <p className="text-text-secondary mt-1 tracking-wide">Ready to explore?</p>
                     </div>
 
-                    {/* Role toggle */}
+                    {/* tab switch */}
                     <div className="flex gap-2 p-1 bg-void rounded-xl border border-white/5">
                       <button
                         type="button"
@@ -333,7 +331,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                     <form onSubmit={handleSubmit(onAuthSubmit)} className="flex flex-col gap-4">
                       {apiError && <p className="text-energy-pink text-sm text-center bg-energy-pink/10 py-2 rounded-lg">{apiError}</p>}
 
-                      {/* Common fields */}
+
                       <div className="flex flex-col gap-3">
                         <div>
                           <input {...register("username")} type="text" placeholder="Full Name" className={inputClass} />
@@ -359,7 +357,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                         </div>
                       </div>
 
-                      {/* Organizer extra fields — animated */}
+                      {/* extra fields */}
                       <AnimatePresence>
                         {isOrganizer && (
                           <motion.div
@@ -371,7 +369,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                             className="overflow-hidden"
                           >
                             <div className="flex flex-col gap-3 pt-1">
-                              {/* Divider */}
+                              {/* div */}
                               <div className="flex items-center gap-3">
                                 <div className="flex-1 h-px bg-purple-500/30" />
                                 <span className="text-xs text-purple-400 uppercase tracking-widest font-medium">Organization Details</span>
@@ -448,7 +446,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                     </p>
                   </motion.div>
                 ) : (
-                  /* ─── OTP VERIFICATION ─── */
+                  /* otp screen */
                   <motion.div key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col gap-6">
                     <div className="text-center">
                       <div className="w-16 h-16 bg-chill-blue/10 rounded-full flex items-center justify-center mx-auto mb-4 text-chill-blue border border-chill-blue/20">

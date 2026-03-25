@@ -52,7 +52,7 @@ export default function OrganizerView() {
     const [bookingsLoading, setBookingsLoading] = useState(false);
     const user = getUser();
     
-    // Non-form UI states
+    // ui states
     const [publishSuccess, setPublishSuccess] = useState(false);
     const [editingEventId, setEditingEventId] = useState(null);
 
@@ -127,7 +127,7 @@ export default function OrganizerView() {
         } else if (step === 3) {
             isStepValid = await trigger(["ageLimit", "dressCode", "doorPolicy", "imageUrl"]);
         } else if (step === 4) {
-            // Step 4 — performer details + publish
+            // step 4 submit
             await handleSubmit(handleFinalPublish)();
             return;
         }
@@ -170,14 +170,13 @@ export default function OrganizerView() {
             );
             
             setPublishSuccess(true);
-            setStep(4);
-            setEditingEventId(null);
+            setStep(5);
             fetchMyEvents();
             toast.success(editingEventId ? "Event updated successfully!" : "Event published successfully!");
         } catch (error) {
             console.error("Publish failed:", error);
             setPublishSuccess(false);
-            setStep(4);
+            setStep(5);
             toast.error("Failed to publish event. Please check your data.");
         }
     };
@@ -264,7 +263,7 @@ export default function OrganizerView() {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Main Content Area */}
+                {/* main content */}
                 <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
                     {activeTab === "events" ? (
                         <>
@@ -359,7 +358,7 @@ export default function OrganizerView() {
                     )}
                 </div>
 
-                {/* Form Section */}
+                {/* form */}
                 <div className="lg:col-span-1 order-1 lg:order-2">
                     <ClayCard className="p-8 sticky top-24 border border-chill-blue/20 shadow-[0_0_30px_rgba(0,240,255,0.05)]">
                         <div className="flex items-center gap-3 mb-8">
@@ -501,7 +500,7 @@ export default function OrganizerView() {
                                             </div>
                                             {errors.imageUrl && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.imageUrl.message}</p>}
                                         </div>
-                                        {/* Live preview */}
+                                        {/* preview */}
                                         <div className="w-full h-32 rounded-xl overflow-hidden border border-white/5 bg-void flex items-center justify-center">
                                             {watch("imageUrl") ? (
                                                 <img

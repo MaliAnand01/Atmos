@@ -174,7 +174,7 @@ export default function EventDetail() {
             <p className="text-text-secondary text-lg leading-relaxed font-body">{event.description || "No description provided."}</p>
           </motion.div>
 
-          {/* Artist Spotlight Section */}
+          {/* artist */}
           {(event.performerName || event.performerBio) && (
             <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }} className="relative group">
                <div className="absolute -inset-4 bg-gradient-to-r from-chill-blue/5 via-energy-pink/5 to-transparent blur-2xl rounded-[3rem] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -z-10" />
@@ -248,7 +248,7 @@ export default function EventDetail() {
           )}
         </motion.div>
 
-        {/* Sidebar: Booking */}
+        {/* sidebar */}
         <div className="w-full lg:w-[360px] shrink-0">
           <div className="sticky top-28">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>

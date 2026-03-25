@@ -26,5 +26,5 @@ export const logout = () => {
 
 export const getAuthHeader = () => {
   const token = localStorage.getItem('atmos_token');
-  return token ? `Basic ${token}` : '';
+  return token ? `Bearer ${token}` : '';
 };

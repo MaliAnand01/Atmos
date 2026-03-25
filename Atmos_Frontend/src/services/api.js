@@ -10,31 +10,21 @@ const axiosInstance = axios.create({
   }
 });
 
-// Request Interceptor: Pass auth tokens automatically
+// Add auth token to requests
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem('atmos_token');
-  const userStr = localStorage.getItem('atmos_user');
   
   if (token) {
-    config.headers['Authorization'] = `Basic ${token}`;
+    config.headers['Authorization'] = `Bearer ${token}`;
   }
 
-  if (userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      if (user.id) config.headers['X-User-Id'] = user.id.toString();
-      if (user.role) config.headers['X-User-Role'] = user.role;
-    } catch (e) {
-      console.error("Failed to parse user for headers", e);
-    }
-  }
 
   return config;
 }, (error) => {
   return Promise.reject(error);
 });
 
-// Response Interceptor: Centralized error handling
+// Global error handler
 axiosInstance.interceptors.response.use(
   (response) => response.data,
   (error) => {
@@ -44,29 +34,25 @@ axiosInstance.interceptors.response.use(
 );
 
 class ApiService {
-  /** GET request */
   async get(endpoint) {
     return axiosInstance.get(endpoint);
   }
 
-  /** POST request */
   async post(endpoint, data) {
     return axiosInstance.post(endpoint, data);
   }
 
-  /** PUT request */
   async put(endpoint, data) {
     return axiosInstance.put(endpoint, data);
   }
 
-  /** DELETE request */
   async delete(endpoint) {
     return axiosInstance.delete(endpoint);
   }
 
 }
 
-// Helper to format image URLs from the backend
+// Function to format external image links
 export const getImageUrl = (url) => {
   if (!url || !url.startsWith('http')) return "https://images.unsplash.com/photo-1470221339082-e088f2067c7b?w=800&q=80";
   return url;

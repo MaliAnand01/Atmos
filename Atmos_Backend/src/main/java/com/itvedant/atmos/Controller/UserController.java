@@ -19,7 +19,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    /** Admin: list all users */
+    // get all users
     @GetMapping
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(
@@ -29,7 +29,7 @@ public class UserController {
         );
     }
 
-    /** Get user profile */
+    // get profile
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)
@@ -37,7 +37,7 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /** Update user profile */
+    // update
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(
             @PathVariable Long id,
@@ -50,7 +50,7 @@ public class UserController {
         }
     }
 
-    /** Delete user */
+    // delete
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);

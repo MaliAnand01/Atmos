@@ -8,17 +8,21 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+import com.itvedant.atmos.security.JwtUtil;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final UserService userService;
+    private final JwtUtil jwtUtil;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
+        this.jwtUtil = jwtUtil;
     }
 
-    /** Register a new user */
+    // register
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRequestDTO body) {
         try {
@@ -41,13 +45,15 @@ public class AuthController {
             user.setOrganizationName(body.getOrganizationName());
             user.setPanGstin(body.getPanGstin());
 
-            // Set status PENDING for Organizers
+            // make org pending
             if ("ROLE_ORGANIZER".equalsIgnoreCase(role)) {
                 user.setOrganizerStatus("PENDING");
             }
 
             User saved = userService.registerUser(user);
-            return ResponseEntity.ok(userService.mapToResponse(saved));
+            com.itvedant.atmos.DTO.UserResponseDTO response = userService.mapToResponse(saved);
+            response.setToken(jwtUtil.generateToken(saved.getEmail(), saved.getRole(), saved.getId()));
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             String msg = e.getMessage();
             if (msg != null && msg.contains("Duplicate entry")) {
@@ -57,7 +63,7 @@ public class AuthController {
         }
     }
 
-    /** Authenticate and login */
+    // login
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
         String email    = body.get("email");
@@ -72,10 +78,12 @@ public class AuthController {
             return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password."));
         }
 
-        return ResponseEntity.ok(userService.mapToResponse(user));
+        com.itvedant.atmos.DTO.UserResponseDTO response = userService.mapToResponse(user);
+        response.setToken(jwtUtil.generateToken(user.getEmail(), user.getRole(), user.getId()));
+        return ResponseEntity.ok(response);
     }
 
-    /** Verify OTP */
+    // verify otp
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
         try {
@@ -92,7 +100,7 @@ public class AuthController {
         }
     }
 
-    /** Resend OTP */
+    // resend otp
     @PostMapping("/resend-otp")
     public ResponseEntity<?> resendOtp(@RequestBody Map<String, String> body) {
         try {

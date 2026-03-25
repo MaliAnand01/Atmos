@@ -4,6 +4,8 @@ import com.itvedant.atmos.Entity.Booking;
 import com.itvedant.atmos.Entity.Event;
 import com.itvedant.atmos.Service.EventService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.CacheControl;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.web.bind.annotation.*;
 
@@ -27,11 +29,22 @@ public class EventController {
     public ResponseEntity<?> getAllEvents(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false, defaultValue = "10") Integer size) {
+        
+        // Implementing Browser Caching
+        // We set the Cache-Control header to 5 minutes so the user's browser
+        // doesn't send duplicate requests to our backend for this data.
+        // This improves application load time and reduces server load.
+        CacheControl cacheControl = CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic();
+        
         if (page != null) {
-            return ResponseEntity.ok(eventService.getAllEventsPaged(
+            return ResponseEntity.ok()
+                    .cacheControl(cacheControl)
+                    .body(eventService.getAllEventsPaged(
                     PageRequest.of(page, size, Sort.by("dateTime").ascending())));
         }
-        return ResponseEntity.ok(eventService.getAllEvents());
+        return ResponseEntity.ok()
+                .cacheControl(cacheControl)
+                .body(eventService.getAllEvents());
     }
 
     // search events

@@ -40,13 +40,6 @@ const EventFeatureCarousel = ({ events }) => {
   const currentIndex = events && events.length > 0 ? ((step % events.length) + events.length) % events.length : 0;
   const currentEvent = events && events.length > 0 ? events[currentIndex] : null;
 
-  // Helper to determine vibe color based on energy level
-  const getVibeColor = (level) => {
-    const h = (level / 10) * 280; // Scale 10 to ~280deg (Purple/Pink/Blue range)
-    return `hsl(${h}, 75%, 60%)`;
-  };
-
-  const currentVibeColor = currentEvent ? getVibeColor(currentEvent.energyLevel || 5) : "#0D0F14";
 
   // Category to Icon Mapping Using Hugeicons
   const CATEGORY_ICONS = {
@@ -138,7 +131,7 @@ const EventFeatureCarousel = ({ events }) => {
                 )}
               >
                 <Icon size={16} />
-                <span className="text-xs font-bold uppercase tracking-tight">{event.title}</span>
+                <span className="text-xs font-bold uppercase tracking-tight truncate max-w-[150px]" title={event.title}>{event.title}</span>
               </button>
             );
           })}
@@ -146,7 +139,7 @@ const EventFeatureCarousel = ({ events }) => {
 
         {/* Left Side: Navigation Chips (Desktop Only) */}
         <motion.div 
-          className="hidden lg:flex lg:w-[40%] h-full relative z-30 flex-col items-start justify-center overflow-hidden lg:pl-16 bg-[#0D0F14] transition-colors duration-1000"
+          className="hidden lg:flex lg:w-[40%] h-full relative z-30 flex-col items-start justify-center overflow-hidden lg:pl-12 bg-[#0D0F14] transition-colors duration-1000"
         >
           {/* Subtle gradient overlay for depth */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent z-10 pointer-events-none" />
@@ -170,7 +163,6 @@ const EventFeatureCarousel = ({ events }) => {
               );
 
               const Icon = CATEGORY_ICONS[event.category] || CATEGORY_ICONS.Default;
-              const vibeColor = getVibeColor(event.energyLevel || 5);
 
               return (
                 <motion.div
@@ -215,10 +207,13 @@ const EventFeatureCarousel = ({ events }) => {
                       />
                     </div>
 
-                    <span className={cn(
-                      "font-bold text-sm md:text-lg tracking-tight uppercase transition-colors duration-500",
-                      isActive ? "text-void" : "text-white/60"
-                    )}>
+                    <span 
+                      className={cn(
+                        "font-bold text-sm md:text-lg tracking-tight uppercase transition-colors duration-500 truncate max-w-[200px] xl:max-w-[280px]",
+                        isActive ? "text-void" : "text-white/60"
+                      )}
+                      title={event.title}
+                    >
                       {event.title}
                     </span>
                   </button>

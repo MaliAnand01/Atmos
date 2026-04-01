@@ -206,11 +206,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  const handleDirections = (address, name) => {
-    if (address) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address + " " + name)}`, "_blank");
-    }
-  };
+
 
   const variants = {
     initial: (dir) => ({ x: dir > 0 ? 50 : -50, opacity: 0, position: "absolute" }),

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useUI } from "../context/UIContext";
@@ -13,7 +13,7 @@ import { getRole, getUser, logout } from "../services/authStore";
 export default function Dashboard() {
     const { dispatch } = useUI();
     const navigate = useNavigate();
-    const [role, setRole] = useState(getRole() || "ROLE_USER");
+    const [role] = useState(getRole() || "ROLE_USER");
     const [activeTab, setActiveTab] = useState("overview");
     const user = getUser();
 

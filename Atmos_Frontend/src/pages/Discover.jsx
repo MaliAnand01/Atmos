@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Search, Filter, MapPin, Heart } from "lucide-react";
 import { getUser } from "../services/authStore";
 import ClayCard from "../components/ClayCard";
@@ -7,7 +7,7 @@ import ClayButton from "../components/ClayButton";
 import Footer from "../components/Footer";
 import { Link } from "react-router-dom";
 import { api, getImageUrl } from "../services/api";
-import { useNavigate } from "react-router-dom";
+
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
@@ -47,12 +47,14 @@ export default function Discover() {
   // Re-fetch when search query or category changes
   useEffect(() => {
     fetchEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debounced, activeCategory]);
 
   useEffect(() => {
     if (user) {
       api.get(`/wishlist/${user.id}`).then(setWishlist).catch(() => {});
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const fetchEvents = async () => {
@@ -90,7 +92,7 @@ export default function Discover() {
         setWishlist(prev => [...prev, event]);
         toast.success("Added to wishlist!");
       }
-    } catch (err) {
+    } catch {
       toast.error("Action failed");
     }
   };

@@ -35,7 +35,7 @@ export default function Home() {
   const containerRef = useRef(null);
   const venuesSectionRef = useRef(null);
   const orbsRef = useRef(null);
-  const scrollHintRef = useRef(null);
+
 
   const fetchEventsByVibe = useCallback(async (level) => {
     try {

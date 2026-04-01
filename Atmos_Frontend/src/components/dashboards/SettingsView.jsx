@@ -68,7 +68,7 @@ export default function SettingsView() {
             logout(); 
             dispatch({ type: 'LOGOUT' });
             navigate('/');
-        } catch (err) {
+        } catch {
             setStatus({ type: "error", message: "Failed to delete account. Please try again." });
             setIsDeleting(false);
             setShowDeleteConfirm(false);
@@ -157,13 +157,14 @@ export default function SettingsView() {
                         </p>
                         
                         {!showDeleteConfirm ? (
-                            <button 
+                            <ClayButton 
+                                variant="secondary"
                                 onClick={() => setShowDeleteConfirm(true)}
-                                className="w-full py-3 rounded-xl border border-energy-pink/30 text-energy-pink hover:bg-energy-pink hover:text-white transition-all text-sm font-bold flex items-center justify-center gap-2"
+                                className="w-full rounded-xl border-energy-pink/30 text-energy-pink hover:bg-energy-pink hover:text-white text-sm flex gap-2 border"
                             >
                                 <Trash2 size={18} />
                                 Delete Account
-                            </button>
+                            </ClayButton>
                         ) : (
                             <div className="space-y-3">
                                 <p className="text-xs font-bold text-center text-white mb-2">Are you absolutely sure?</p>
@@ -174,12 +175,13 @@ export default function SettingsView() {
                                 >
                                     {isDeleting ? "Deleting..." : "Yes, Delete Everything"}
                                 </ClayButton>
-                                <button 
-                                    className="w-full text-xs text-text-secondary hover:text-white"
+                                <ClayButton 
+                                    variant="ghost"
+                                    className="w-full text-xs"
                                     onClick={() => setShowDeleteConfirm(false)}
                                 >
                                     Cancel
-                                </button>
+                                </ClayButton>
                             </div>
                         )}
                     </ClayCard>

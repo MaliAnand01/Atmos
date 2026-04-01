@@ -27,7 +27,7 @@ export default function Footer() {
 
   const user = getUser();
 
-  const onSubscribe = async (data) => {
+  const onSubscribe = async () => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     setSubscribed(true);

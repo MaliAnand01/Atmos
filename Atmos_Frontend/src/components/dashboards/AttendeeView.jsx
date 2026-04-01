@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import ClayCard from "../ClayCard";
+import ClayButton from "../ClayButton";
 import { Ticket, History, MapPin, Heart, Users } from "lucide-react";
 import { api, getImageUrl } from "../../services/api";
 import { getUser } from "../../services/authStore";
@@ -31,6 +32,7 @@ export default function AttendeeView() {
             }
         };
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id]);
   
     const handleRemoveWishlist = async (e, eventId) => {
@@ -40,7 +42,7 @@ export default function AttendeeView() {
         await api.post(`/wishlist/${user.id}/${eventId}`);
         setWishlist(prev => prev.filter(item => item.id !== eventId));
         toast.success("Removed from wishlist");
-      } catch (err) {
+      } catch {
         toast.error("Failed to remove");
       }
     };
@@ -72,18 +74,20 @@ export default function AttendeeView() {
 
                 {/* Navigation Tabs */}
                 <div className="flex gap-4 p-1 bg-void rounded-2xl border border-white/5 w-fit">
-                    <button 
+                    <ClayButton 
                         onClick={() => setActiveTab("bookings")} 
-                        className={`px-6 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'bookings' ? 'bg-energy-pink text-white' : 'text-text-secondary hover:text-white'}`}
+                        variant={activeTab === 'bookings' ? 'danger' : 'ghost'}
+                        className="rounded-xl text-xs flex items-center gap-2 py-2"
                     >
                         <Ticket size={16} /> My Bookings
-                    </button>
-                    <button 
+                    </ClayButton>
+                    <ClayButton 
                         onClick={() => setActiveTab("wishlist")} 
-                        className={`px-6 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'wishlist' ? 'bg-chill-blue text-white' : 'text-text-secondary hover:text-white'}`}
+                        variant={activeTab === 'wishlist' ? 'accent' : 'ghost'}
+                        className="rounded-xl text-xs flex items-center gap-2 py-2"
                     >
                         <Heart size={16} /> Wishlist
-                    </button>
+                    </ClayButton>
                 </div>
             </div>
             
@@ -149,12 +153,13 @@ export default function AttendeeView() {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start">
                                             <h4 className="font-bold text-white truncate">{event.title}</h4>
-                                            <button 
+                                            <ClayButton 
+                                                variant="icon"
                                                 onClick={(e) => handleRemoveWishlist(e, event.id)}
-                                                className="p-1 hover:text-energy-pink transition-colors"
+                                                className="hover:text-energy-pink p-1 bg-white/5 rounded-full"
                                             >
                                                 <Heart size={16} fill="currentColor" className="text-energy-pink" />
-                                            </button>
+                                            </ClayButton>
                                         </div>
                                         <div className="flex items-center gap-2 text-[11px] text-text-secondary mt-1">
                                             <MapPin size={12} className="text-chill-blue" />

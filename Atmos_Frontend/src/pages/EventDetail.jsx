@@ -47,7 +47,7 @@ export default function EventDetail() {
           try {
             const wl = await api.get(`/wishlist/${user.id}`);
             setLiked(wl.some(fav => fav.id === parseInt(id)));
-          } catch(e) {}
+          } catch (e) { console.error(e); }
         }
       } catch (err) {
         console.error("Failed to load event details:", err);
@@ -57,6 +57,7 @@ export default function EventDetail() {
       }
     };
     if (id) fetchEventData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user?.id]);
 
   const handleWishlistToggle = async () => {
@@ -69,7 +70,7 @@ export default function EventDetail() {
     try {
       await api.post(`/wishlist/${user.id}/${id}`, {});
       toast.success(isAdding ? "Added to wishlist!" : "Removed from wishlist");
-    } catch (err) {
+    } catch {
       setLiked(!isAdding);
       toast.error("Action failed");
     }

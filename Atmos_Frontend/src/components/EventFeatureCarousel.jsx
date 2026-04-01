@@ -38,7 +38,7 @@ const EventFeatureCarousel = ({ events }) => {
   const activeChipRef = React.useRef(null);
 
   const currentIndex = events && events.length > 0 ? ((step % events.length) + events.length) % events.length : 0;
-  const currentEvent = events && events.length > 0 ? events[currentIndex] : null;
+
 
 
   // Category to Icon Mapping Using Hugeicons

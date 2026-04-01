@@ -74,13 +74,13 @@ export default function OrganizerView() {
     });
 
     const energyLevel = watch("energyLevel");
-    const title = watch("title");
-    const venueId = watch("venueId");
+
 
     useEffect(() => {
         fetchMyEvents();
         fetchVenues();
         fetchBookings();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchBookings = async () => {
@@ -247,18 +247,20 @@ export default function OrganizerView() {
                     <p className="text-text-secondary text-sm mt-1">Manage your events and track bookings</p>
                 </div>
                 <div className="flex bg-clay-surface p-1 rounded-2xl border border-white/5">
-                    <button 
+                    <ClayButton 
                         onClick={() => setActiveTab("events")}
-                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === "events" ? "bg-chill-blue text-void shadow-lg" : "text-text-secondary hover:text-white"}`}
+                        variant={activeTab === 'events' ? 'accent' : 'ghost'}
+                        className="rounded-xl text-sm py-2"
                     >
                         Events
-                    </button>
-                    <button 
+                    </ClayButton>
+                    <ClayButton 
                         onClick={() => setActiveTab("bookings")}
-                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === "bookings" ? "bg-chill-blue text-void shadow-lg" : "text-text-secondary hover:text-white"}`}
+                        variant={activeTab === 'bookings' ? 'accent' : 'ghost'}
+                        className="rounded-xl text-sm py-2"
                     >
                         Bookings
-                    </button>
+                    </ClayButton>
                 </div>
             </div>
             
@@ -297,12 +299,12 @@ export default function OrganizerView() {
                                                     <h4 className="text-lg font-bold truncate pr-4">{event.title}</h4>
                                                     
                                                     <div className="flex gap-2">
-                                                        <button onClick={() => handleEdit(event)} className="p-2 bg-white/5 hover:bg-chill-blue/20 text-text-secondary hover:text-chill-blue rounded-lg transition-all">
+                                                        <ClayButton variant="icon" onClick={() => handleEdit(event)} className="p-2 bg-white/5 hover:bg-chill-blue/20 text-text-secondary hover:text-chill-blue rounded-lg transition-all">
                                                             <Pencil size={16} />
-                                                        </button>
-                                                        <button onClick={() => handleDeleteEvent(event.id)} className="p-2 bg-white/5 hover:bg-energy-pink/20 text-text-secondary hover:text-energy-pink rounded-lg transition-all">
+                                                        </ClayButton>
+                                                        <ClayButton variant="icon" onClick={() => handleDeleteEvent(event.id)} className="p-2 bg-white/5 hover:bg-energy-pink/20 text-text-secondary hover:text-energy-pink rounded-lg transition-all">
                                                             <Trash2 size={16} />
-                                                        </button>
+                                                        </ClayButton>
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col gap-2 text-xs text-text-secondary">
@@ -321,7 +323,7 @@ export default function OrganizerView() {
                         <>
                             <div className="flex justify-between items-center">
                                 <h3 className="text-xl font-bold font-display opacity-80">Recent Bookings</h3>
-                                <button onClick={fetchBookings} className="text-xs text-chill-blue hover:underline">Refresh</button>
+                                <ClayButton variant="ghost" className="p-0 hover:bg-transparent" onClick={fetchBookings}><span className="text-xs text-chill-blue hover:underline">Refresh</span></ClayButton>
                             </div>
                             {bookingsLoading ? (
                                 <div className="space-y-4">
@@ -367,7 +369,7 @@ export default function OrganizerView() {
                             </div>
                             <h3 className="text-xl font-bold font-display">{editingEventId ? 'Edit Event' : 'New Event'}</h3>
                             {editingEventId && (
-                                <button onClick={resetForm} className="ml-auto text-xs text-text-secondary hover:text-white uppercase tracking-widest font-bold">Cancel</button>
+                                <ClayButton variant="ghost" onClick={resetForm} className="ml-auto text-xs text-text-secondary hover:text-white uppercase tracking-widest font-bold px-0 bg-transparent hover:bg-transparent">Cancel</ClayButton>
                             )}
                         </div>
                         

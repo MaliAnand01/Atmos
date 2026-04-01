@@ -41,7 +41,7 @@ export default function FloatingNav() {
           list: Array.isArray(list) ? list.slice(0, 5) : [] 
         } 
       });
-    } catch (err) {}
+    } catch (err) { console.error(err); }
   };
 
   useEffect(() => {
@@ -66,13 +66,14 @@ export default function FloatingNav() {
       const interval = setInterval(fetchNotifs, 30000);
       return () => clearInterval(interval);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, isAuthenticated, dispatch]);
 
   const handleMarkRead = async (id) => {
     try {
       await api.put(`/notifications/${id}/read`);
       dispatch({ type: 'MARK_READ', payload: id });
-    } catch (err) {}
+    } catch (err) { console.error(err); }
   };
 
   const navItems = [

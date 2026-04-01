@@ -95,7 +95,7 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
         setErrorMsg(resp.message || "Frequency mismatch.");
         setStep(5);
       }
-    } catch (err) {
+    } catch {
       setErrorMsg("Void interference detected. Payment failed.");
       setStep(5);
     }

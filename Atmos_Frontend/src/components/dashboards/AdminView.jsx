@@ -172,10 +172,10 @@ export default function AdminView() {
 
             {/* Navigation Tabs */}
             <div className="flex gap-4 p-1 bg-void rounded-2xl border border-white/5 w-full overflow-x-auto scrollbar-hide flex-nowrap shrink-0 max-w-full">
-                <button onClick={() => setActiveTab("directory")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'directory' ? 'bg-chill-blue text-void' : 'text-text-secondary hover:text-white'}`}>Users</button>
-                <button onClick={() => setActiveTab("pending")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'pending' ? 'bg-energy-orange text-white' : 'text-text-secondary hover:text-white'}`}>Pending Organizers</button>
-                <button onClick={() => setActiveTab("events")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'events' ? 'bg-energy-pink text-white' : 'text-text-secondary hover:text-white'}`}>Events</button>
-                <button onClick={() => setActiveTab("venues")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'venues' ? 'bg-white text-void' : 'text-text-secondary hover:text-white'}`}>Venues</button>
+                <ClayButton onClick={() => setActiveTab("directory")} variant={activeTab === 'directory' ? 'accent' : 'ghost'} className="px-6 py-2 rounded-xl text-xs whitespace-nowrap">Users</ClayButton>
+                <ClayButton onClick={() => setActiveTab("pending")} variant={activeTab === 'pending' ? 'danger' : 'ghost'} className={`px-6 py-2 rounded-xl text-xs whitespace-nowrap ${activeTab === 'pending' ? '!bg-energy-orange' : ''}`}>Pending Organizers</ClayButton>
+                <ClayButton onClick={() => setActiveTab("events")} variant={activeTab === 'events' ? 'danger' : 'ghost'} className="px-6 py-2 rounded-xl text-xs whitespace-nowrap">Events</ClayButton>
+                <ClayButton onClick={() => setActiveTab("venues")} variant={activeTab === 'venues' ? 'primary' : 'ghost'} className={`px-6 py-2 rounded-xl text-xs whitespace-nowrap ${activeTab === 'venues' ? 'bg-white text-void' : ''}`}>Venues</ClayButton>
             </div>
 
             <AnimatePresence mode="wait">
@@ -198,10 +198,10 @@ export default function AdminView() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {user.organizerStatus === 'PENDING' && (
-                                            <button onClick={() => handleApproveOrganizer(user.id)} className="p-2 text-chill-blue hover:scale-110 transition-transform" title="Approve"><ShieldCheck size={18} /></button>
+                                            <ClayButton variant="icon" onClick={() => handleApproveOrganizer(user.id)} className="p-2 text-chill-blue hover:scale-110 transition-transform bg-transparent border-none" title="Approve"><ShieldCheck size={18} /></ClayButton>
                                         )}
                                         {user.id !== currentUser?.id && (
-                                            <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-text-secondary hover:text-energy-pink md:opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={18} /></button>
+                                            <ClayButton variant="icon" onClick={() => handleDeleteUser(user.id)} className="p-2 text-text-secondary hover:text-energy-pink md:opacity-0 group-hover:opacity-100 transition-all bg-transparent border-none"><Trash2 size={18} /></ClayButton>
                                         )}
                                     </div>
                                 </ClayCard>
@@ -241,18 +241,20 @@ export default function AdminView() {
                                                 </div>
 
                                                 <div className="flex gap-3 pt-2">
-                                                    <button 
+                                                    <ClayButton 
+                                                        variant="accent"
                                                         onClick={() => handleApproveOrganizer(user.id)}
-                                                        className="px-6 py-2 bg-chill-blue text-void text-xs font-bold rounded-full hover:shadow-[0_0_20_rgba(0,184,212,0.4)] transition-all"
+                                                        className="px-6 py-2 text-xs hover:shadow-[0_0_20_rgba(0,184,212,0.4)]"
                                                     >
                                                         APPROVE
-                                                    </button>
-                                                    <button 
+                                                    </ClayButton>
+                                                    <ClayButton 
+                                                        variant="secondary"
                                                         onClick={() => handleDeleteUser(user.id)}
-                                                        className="px-6 py-2 border border-energy-pink/30 text-energy-pink text-xs font-bold rounded-full hover:bg-energy-pink/10 transition-all"
+                                                        className="px-6 py-2 border-energy-pink/30 text-energy-pink text-xs hover:bg-energy-pink/10"
                                                     >
                                                         REJECT
-                                                    </button>
+                                                    </ClayButton>
                                                 </div>
                                             </div>
                                             <div className="p-4 bg-energy-orange/10 rounded-3xl text-energy-orange">
@@ -310,8 +312,8 @@ export default function AdminView() {
                                         {venue.imageUrl && <img src={venue.imageUrl} className="w-full h-full object-cover opacity-60" />}
                                         <div className="absolute inset-0 bg-gradient-to-t from-void to-transparent" />
                                         <div className="absolute top-2 right-2 flex gap-2 md:opacity-0 group-hover:opacity-100 transition-all">
-                                            <button onClick={() => handleEditVenue(venue)} className="p-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all backdrop-blur-md border border-white/10"><Pencil size={16} /></button>
-                                            <button onClick={() => handleDeleteVenue(venue.id)} className="p-2 bg-energy-pink/20 text-energy-pink rounded-lg hover:bg-energy-pink hover:text-white transition-all backdrop-blur-md border border-energy-pink/10"><Trash2 size={16} /></button>
+                                            <ClayButton variant="icon" onClick={() => handleEditVenue(venue)} className="p-2 bg-white/10 text-white rounded-lg hover:bg-white/20 backdrop-blur-md border border-white/10"><Pencil size={16} /></ClayButton>
+                                            <ClayButton variant="icon" onClick={() => handleDeleteVenue(venue.id)} className="p-2 bg-energy-pink/20 text-energy-pink rounded-lg hover:bg-energy-pink hover:text-white backdrop-blur-md border border-energy-pink/10"><Trash2 size={16} /></ClayButton>
                                         </div>
                                     </div>
                                     <div className="p-4">
@@ -337,7 +339,7 @@ export default function AdminView() {
                                         <p className="text-[10px] text-text-secondary uppercase font-bold mt-1">Energy Level: {event.energyLevel} | By: {event.organizerId || 'Atmos'}</p>
                                     </div>
                                     <div className="flex gap-2">
-                                       <button onClick={() => handleDeleteEvent(event.id)} className="w-8 h-8 rounded-full bg-void flex items-center justify-center text-text-secondary/50 border border-white/5 hover:bg-energy-pink/20 hover:text-energy-pink transition-all"><Trash2 size={14} /></button>
+                                       <ClayButton variant="icon" onClick={() => handleDeleteEvent(event.id)} className="w-8 h-8 rounded-full bg-void flex items-center justify-center text-text-secondary/50 border border-white/5 hover:bg-energy-pink/20 hover:text-energy-pink transition-all"><Trash2 size={14} /></ClayButton>
                                     </div>
                                 </ClayCard>
                             ))}

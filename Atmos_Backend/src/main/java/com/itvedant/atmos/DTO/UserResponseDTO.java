@@ -13,4 +13,5 @@ public class UserResponseDTO {
     private String panGstin;
     private String organizerStatus;
     private Boolean verified;
+    private String token;
 }

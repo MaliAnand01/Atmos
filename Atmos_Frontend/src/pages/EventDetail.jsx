@@ -47,7 +47,7 @@ export default function EventDetail() {
           try {
             const wl = await api.get(`/wishlist/${user.id}`);
             setLiked(wl.some(fav => fav.id === parseInt(id)));
-          } catch(e) {}
+          } catch (e) { console.error(e); }
         }
       } catch (err) {
         console.error("Failed to load event details:", err);
@@ -57,6 +57,7 @@ export default function EventDetail() {
       }
     };
     if (id) fetchEventData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user?.id]);
 
   const handleWishlistToggle = async () => {
@@ -69,7 +70,7 @@ export default function EventDetail() {
     try {
       await api.post(`/wishlist/${user.id}/${id}`, {});
       toast.success(isAdding ? "Added to wishlist!" : "Removed from wishlist");
-    } catch (err) {
+    } catch {
       setLiked(!isAdding);
       toast.error("Action failed");
     }
@@ -174,7 +175,7 @@ export default function EventDetail() {
             <p className="text-text-secondary text-lg leading-relaxed font-body">{event.description || "No description provided."}</p>
           </motion.div>
 
-          {/* Artist Spotlight Section */}
+          {/* artist */}
           {(event.performerName || event.performerBio) && (
             <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }} className="relative group">
                <div className="absolute -inset-4 bg-gradient-to-r from-chill-blue/5 via-energy-pink/5 to-transparent blur-2xl rounded-[3rem] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -z-10" />
@@ -248,7 +249,7 @@ export default function EventDetail() {
           )}
         </motion.div>
 
-        {/* Sidebar: Booking */}
+        {/* sidebar */}
         <div className="w-full lg:w-[360px] shrink-0">
           <div className="sticky top-28">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>

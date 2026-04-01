@@ -58,38 +58,51 @@ public class DataLoader {
                 userRepository.saveAll(Objects.requireNonNull(List.of(admin, testUser, organizer)));
             }
 
-            // Seed Venues
-            if (venueRepository.count() == 0) {
-                Venue v1 = createVenue("Kitty Su Mumbai", "The Lalit, Andheri East", 800,
-                        "https://images.unsplash.com/photo-1545128485-c400e7702796?w=800&q=80");
-                Venue v2 = createVenue("Prithvi Cafe", "Juhu Church Road, Juhu", 120,
-                        "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=80");
-                Venue v3 = createVenue("NSCI SVP Stadium", "Worli, Mumbai", 5000,
-                        "https://images.unsplash.com/photo-1478147424052-bbb812f8ecbd?w=600&q=80");
-                Venue v4 = createVenue("antiSOCIAL", "Mathuradas Mill Compound, Lower Parel", 400,
-                        "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80");
-                Venue v5 = createVenue("Aer Rooftop", "Four Seasons Hotel, Worli", 250,
-                        "https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=600&q=80");
-                Venue v6 = createVenue("Gateway Stage", "Apollo Bunder, Colaba", 1500,
-                        "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600&q=80");
-                Venue v7 = createVenue("The Ghetto", "Breach Candy, Mumbai", 100,
-                        "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&q=80");
-                Venue v8 = createVenue("Royal Opera House", "Girgaon, Mumbai", 574,
-                        "https://images.unsplash.com/photo-1503095393527-32bdad206539?w=600&q=80");
-                Venue v9 = createVenue("PVR Juhu", "Dynamix Mall, Juhu", 300,
-                        "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&q=80");
-                Venue v10 = createVenue("Turf Park", "Bandra West, Mumbai", 50,
-                        "https://images.unsplash.com/photo-1526232761682-d26e03ac148e?w=600&q=80");
+            // Force re-seed: Clear all dependent data first in correct order
+            wishlistRepository.deleteAll();
+            bookingRepository.deleteAll();
+            notificationRepository.deleteAll();
+            eventRepository.deleteAll(); // Delete events before venues!
+            venueRepository.deleteAll();
 
-                venueRepository.saveAll(Objects.requireNonNull(List.of(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10)));
-            }
+            // Seed Venues
+            Venue v1 = createVenue("Kitty Su Mumbai", "The Lalit, Andheri East", 800,
+                    "https://images.unsplash.com/photo-1545128485-c400e7702796?w=800&q=80");
+            Venue v2 = createVenue("Prithvi Cafe", "Juhu Church Road, Juhu", 120,
+                    "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=80");
+            Venue v3 = createVenue("NSCI SVP Stadium", "Worli, Mumbai", 5000,
+                    "https://images.unsplash.com/photo-1478147424052-bbb812f8ecbd?w=600&q=80");
+            Venue v4 = createVenue("antiSOCIAL", "Mathuradas Mill Compound, Lower Parel", 400,
+                    "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80");
+            Venue v5 = createVenue("Aer Rooftop", "Four Seasons Hotel, Worli", 250,
+                    "https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=600&q=80");
+            Venue v6 = createVenue("Gateway Stage", "Apollo Bunder, Colaba", 1500,
+                    "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600&q=80");
+            Venue v7 = createVenue("The Ghetto", "Breach Candy, Mumbai", 100,
+                    "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&q=80");
+            Venue v8 = createVenue("Royal Opera House", "Girgaon, Mumbai", 574,
+                    "https://images.unsplash.com/photo-1503095393527-32bdad206539?w=600&q=80");
+            Venue v9 = createVenue("PVR Juhu", "Dynamix Mall, Juhu", 300,
+                    "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&q=80");
+            Venue v10 = createVenue("Turf Park", "Bandra West, Mumbai", 50,
+                    "https://images.unsplash.com/photo-1526232761682-d26e03ac148e?w=600&q=80");
+            
+            // New Mumbai Venues
+            Venue v11 = createVenue("Jio World Convention Centre", "BKC, Mumbai", 10000,
+                    "https://images.unsplash.com/photo-1431540015161-0bf868a2d407?w=800&q=80");
+            Venue v12 = createVenue("NESCO Centre", "Western Express Hwy, Goregaon", 8000,
+                    "https://images.unsplash.com/photo-1582192732832-728448eb847d?w=800&q=80");
+            Venue v13 = createVenue("Mahalaxmi Racecourse", "Mahalaxmi, Mumbai", 20000,
+                    "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&q=80");
+            Venue v14 = createVenue("DY Patil Stadium", "Nerul, Navi Mumbai", 55000,
+                    "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&q=80");
+            Venue v15 = createVenue("Phoenix Palladium", "Lower Parel, Mumbai", 1000,
+                    "https://images.unsplash.com/photo-1567449300518-034b999a4515?w=800&q=80");
+
+            venueRepository.saveAll(Objects.requireNonNull(List.of(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)));
 
             // Seed Events
-            wishlistRepository.deleteAll(); // Force clear dependent data
-            bookingRepository.deleteAll(); // Clear dependencies first
-            notificationRepository.deleteAll(); // Clear logs
-            eventRepository.deleteAll(); // Force re-seed with new fields
-            if (eventRepository.count() == 0) {
+            if (true) {
                 List<Venue> venues = venueRepository.findAll();
                 Long orgId = userRepository.findByEmail("organizer@atmos.com").map(User::getId).orElse(1L);
 
@@ -153,7 +166,51 @@ public class DataLoader {
                         "Radhanath Swami", "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80", 
                         "A guide and author who has shared the message of spiritual wisdom and bhakti yoga globally. He leads this special sunset meditation session.", null);
 
-                eventRepository.saveAll(Objects.requireNonNull(List.of(e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)));
+                // --- NEW MUMBAI EVENTS ---
+                
+                Event e11 = createEvent("Mumbai Comic Con 2026", "The grandest pop culture celebration in India!", "Geek Out at BKC", "All Ages",
+                        "Cosplay / Casual", "Ticket required for entry", 10, 45, 10000, venues.get(10), orgId, 1299.0, "Workshop", 
+                        "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=800&q=80", 
+                        "Comic Con India", "https://images.unsplash.com/photo-1560941001-d4b52ad00ecc?w=400&q=80", 
+                        "Comic Con India is the premier pop culture event in the country, bringing together fans of comics, movies, gaming, and television for an unforgettable weekend.", "Convention");
+
+                Event e12 = createEvent("Lollapalooza India", "A multi-genre music extravaganza", "Global Beats at the Racecourse", "15+",
+                        "Festival Chic", "No outside food/water", 10, 60, 20000, venues.get(12), orgId, 5999.0, "EDM", 
+                        "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&q=80", 
+                        "Imagine Dragons", "https://images.unsplash.com/photo-1501612780327-45045538702b?w=400&q=80", 
+                        "American pop-rock band Imagine Dragons brings their world-famous stadium energy to the heart of Mumbai for a night of epic anthems.", "Mercury World Tour");
+
+                Event e13 = createEvent("Zomaland by Zomato", "India's grandest food & entertainment carnival", "Feast and Fun at Goregaon", "All Ages",
+                        "Casual", "RFID wristbands required", 9, 25, 8000, venues.get(11), orgId, 699.0, "Live Music", 
+                        "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80", 
+                        "Ritviz", "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=80", 
+                        "Indian singer-songwriter and record producer Ritviz, famous for his chart-topping fusion of electronic and classical Indian music.", "Mimmi Tour");
+
+                Event e14 = createEvent("Sunburn Arena: Martin Garrix", "The #1 DJ in the world returns to Mumbai", "EDM Invasion at DY Patil", "18+",
+                        "Rave Gear", "Security screening mandatory", 10, 40, 55000, venues.get(13), orgId, 2499.0, "EDM", 
+                        "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80", 
+                        "Martin Garrix", "https://images.unsplash.com/photo-1520127873598-bb028738988a?w=400&q=80", 
+                        "World-renowned DJ and producer Martin Garrix brings his high-energy set and spectacular production to Navi Mumbai.", "Sentio Tour");
+
+                Event e15 = createEvent("Kala Ghoda Arts Festival", "Celebrating the vibrant art and culture of Mumbai", "Heritage & Creativity", "All Ages",
+                        "Ethnic / Smart Casual", "Public street event", 6, 15, 1500, venues.get(5), orgId, 0.0, "Classical", 
+                        "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80", 
+                        "Local Artisans", "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=400&q=80", 
+                        "A collective of Mumbai's finest street artists, musicians, and performers coming together to celebrate heritage.", null);
+
+                Event e16 = createEvent("Marine Drive Open Mic", "Stand-up comedy by the Arabian Sea", "Laughs by the Shore", "16+",
+                        "Casual", "Arrive 15 mins early", 7, 3, 50, venues.get(9), orgId, 199.0, "Acoustic", 
+                        "https://images.unsplash.com/photo-1514302240734-41667c9c1e9b?w=800&q=80", 
+                        "Zakir Khan", "https://images.unsplash.com/photo-1543589077-47d81606c1bf?w=400&q=80", 
+                        "The 'Sakht Launda' himself, Zakir Khan, drops by for a late-night set to test new material.", null);
+
+                Event e17 = createEvent("Midnight Cycling: South Bombay", "An overnight adventure through the heritage streets", "Ride the Empty Streets", "18+",
+                        "Sporty", "Bicycle and helmet provided", 8, 2, 100, venues.get(5), orgId, 899.0, "Workshop", 
+                        "https://images.unsplash.com/photo-1471506480208-8a93bea5c722?w=800&q=80", 
+                        "Adventure Mumbai", "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=400&q=80", 
+                        "A team of adventure enthusiasts leading heritage tours across Mumbai's most iconic landmarks under the moonlight.", null);
+
+                eventRepository.saveAll(Objects.requireNonNull(List.of(e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14, e15, e16, e17)));
             }
         };
     }

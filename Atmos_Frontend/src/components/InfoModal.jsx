@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShieldCheck, FileText, MessageSquare, Twitter, MailOpen, ArrowRight, MessageCircle } from "lucide-react";
 import ClayCard from "./ClayCard";
-import { cn } from "../utils/cn";
+
 
 const CONTENT = {
   privacy: {

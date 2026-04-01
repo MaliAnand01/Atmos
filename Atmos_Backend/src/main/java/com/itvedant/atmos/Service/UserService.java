@@ -56,7 +56,7 @@ public class UserService {
         }
         User saved = userRepository.save(Objects.requireNonNull(user));
         
-        // Generate and send OTP
+        // send otp
         otpService.generateAndSendOTP(saved);
         
         return saved;
@@ -76,7 +76,7 @@ public class UserService {
         otpService.generateAndSendOTP(user);
     }
 
-    /** User login */
+    // login
     public User login(String email, String password) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty())
@@ -138,7 +138,7 @@ public class UserService {
         user.setOrganizerStatus("APPROVED");
         User saved = userRepository.save(user);
         
-        // Notify the user
+        // notify
         notificationService.createNotification(user.getId(), 
             "Your organizer application has been approved! You can now create events.", 
             "APPROVAL");

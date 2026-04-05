@@ -9,7 +9,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
@@ -19,18 +22,7 @@ public class UserService {
     private final NotificationService notificationService;
     private final OTPService otpService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, 
-                       com.itvedant.atmos.Repo.BookingRepository bookingRepository,
-                       com.itvedant.atmos.Repo.EventRepository eventRepository,
-                       NotificationService notificationService,
-                       OTPService otpService) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.bookingRepository = bookingRepository;
-        this.eventRepository = eventRepository;
-        this.notificationService = notificationService;
-        this.otpService = otpService;
-    }
+
 
     public com.itvedant.atmos.DTO.UserResponseDTO mapToResponse(User user) {
         com.itvedant.atmos.DTO.UserResponseDTO dto = new com.itvedant.atmos.DTO.UserResponseDTO();
@@ -76,6 +68,22 @@ public class UserService {
         otpService.generateAndSendOTP(user);
     }
 
+    public void sendPasswordResetOtp(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email not found."));
+        otpService.generateAndSendOTP(user);
+    }
+
+    public void resetPassword(String email, String otp, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email not found."));
+        if (!otpService.verifyOTP(user, otp)) {
+            throw new RuntimeException("Invalid or expired OTP.");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
     // login
     public User login(String email, String password) {
         Optional<User> userOpt = userRepository.findByEmail(email);
@@ -111,6 +119,9 @@ public class UserService {
             existing.setEmail(updates.getEmail());
         }
         if (updates.getPassword() != null && !updates.getPassword().isBlank()) {
+            if (updates.getCurrentPassword() == null || !passwordEncoder.matches(updates.getCurrentPassword(), existing.getPassword())) {
+                throw new RuntimeException("Current password provided is incorrect.");
+            }
             existing.setPassword(passwordEncoder.encode(updates.getPassword()));
         }
         if (updates.getPhone() != null) {

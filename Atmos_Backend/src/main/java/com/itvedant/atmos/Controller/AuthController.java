@@ -10,17 +10,17 @@ import java.util.Map;
 
 import com.itvedant.atmos.security.JwtUtil;
 
+import lombok.RequiredArgsConstructor;
+
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
-    public AuthController(UserService userService, JwtUtil jwtUtil) {
-        this.userService = userService;
-        this.jwtUtil = jwtUtil;
-    }
+
 
     // register
     @PostMapping("/register")
@@ -107,6 +107,28 @@ public class AuthController {
             Long userId = Long.parseLong(body.get("userId"));
             userService.resendOtp(userId);
             return ResponseEntity.ok(Map.of("message", "New OTP sent to your email."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // forgot password
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
+        try {
+            userService.sendPasswordResetOtp(body.get("email"));
+            return ResponseEntity.ok(Map.of("message", "Password reset OTP sent to email."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // reset password
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+        try {
+            userService.resetPassword(body.get("email"), body.get("otp"), body.get("newPassword"));
+            return ResponseEntity.ok(Map.of("message", "Password reset successfully."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

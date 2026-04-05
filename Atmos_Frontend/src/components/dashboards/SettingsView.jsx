@@ -14,7 +14,11 @@ import * as z from "zod";
 const settingsSchema = z.object({
     username: z.string().min(3, "Username must be at least 3 characters"),
     email: z.string().email("Invalid email address"),
+    currentPassword: z.string().optional().or(z.literal("")),
     password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
+}).refine(data => !data.password || data.currentPassword, {
+    message: "Current password is required to establish a new password",
+    path: ["currentPassword"]
 });
 
 export default function SettingsView() {
@@ -24,6 +28,7 @@ export default function SettingsView() {
     const [status, setStatus] = useState({ type: "", message: "" });
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteInput, setDeleteInput] = useState("");
 
     const {
         register,
@@ -35,6 +40,7 @@ export default function SettingsView() {
         defaultValues: {
             username: user?.username || "",
             email: user?.email || "",
+            currentPassword: "",
             password: "",
         }
     });
@@ -46,7 +52,10 @@ export default function SettingsView() {
                 username: data.username, 
                 email: data.email 
             };
-            if (data.password) updates.password = data.password;
+            if (data.password) {
+                updates.password = data.password;
+                updates.currentPassword = data.currentPassword;
+            }
             
             await api.put(`/users/${user.id}`, updates);
             
@@ -55,7 +64,7 @@ export default function SettingsView() {
             localStorage.setItem('atmos_user', JSON.stringify(updatedUser));
             
             setStatus({ type: "success", message: "Profile updated successfully!" });
-            reset({ ...data, password: "" });
+            reset({ ...data, currentPassword: "", password: "" });
         } catch (err) {
             setStatus({ type: "error", message: err.message || "Failed to update profile" });
         }
@@ -110,6 +119,19 @@ export default function SettingsView() {
                                         />
                                     </div>
                                     {errors.email && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.email.message}</p>}
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">Current Password (Required for changing password)</label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
+                                        <input 
+                                            {...register("currentPassword")}
+                                            type="password"
+                                            placeholder="Current password"
+                                            className="w-full bg-void text-white p-3 pl-12 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/10" 
+                                        />
+                                    </div>
+                                    {errors.currentPassword && <p className="text-energy-pink text-[10px] mt-1 ml-1">{errors.currentPassword.message}</p>}
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block">New Password (Optional)</label>
@@ -167,18 +189,25 @@ export default function SettingsView() {
                             </ClayButton>
                         ) : (
                             <div className="space-y-3">
-                                <p className="text-xs font-bold text-center text-white mb-2">Are you absolutely sure?</p>
+                                <p className="text-xs font-bold text-center text-white mb-2">Type "DELETE" to confirm</p>
+                                <input 
+                                    type="text"
+                                    value={deleteInput}
+                                    onChange={(e) => setDeleteInput(e.target.value)}
+                                    placeholder="DELETE"
+                                    className="w-full p-2 rounded-xl bg-void border border-energy-pink/30 text-white text-center text-xs tracking-widest uppercase outline-none focus:border-energy-pink"
+                                />
                                 <ClayButton 
                                     className="w-full bg-energy-pink hover:bg-energy-pink/80 border-none"
                                     onClick={handleDeleteAccount}
-                                    disabled={isDeleting}
+                                    disabled={isDeleting || deleteInput !== "DELETE"}
                                 >
                                     {isDeleting ? "Deleting..." : "Yes, Delete Everything"}
                                 </ClayButton>
                                 <ClayButton 
                                     variant="ghost"
                                     className="w-full text-xs"
-                                    onClick={() => setShowDeleteConfirm(false)}
+                                    onClick={() => { setShowDeleteConfirm(false); setDeleteInput(""); }}
                                 >
                                     Cancel
                                 </ClayButton>

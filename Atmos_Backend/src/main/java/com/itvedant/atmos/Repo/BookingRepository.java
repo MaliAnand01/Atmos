@@ -8,6 +8,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByUserId(Long userId);
     List<Booking> findByEventOrganizerId(Long organizerId);
     void deleteByUserId(Long userId);
-    java.util.Optional<Booking> findByRazorpayPaymentId(String rzpOrderId);
+    java.util.Optional<Booking> findByRazorpayOrderId(String rzpOrderId);
+    java.util.Optional<Booking> findByRazorpayPaymentId(String rzpPaymentId);
     void deleteByEventId(Long eventId);
 }

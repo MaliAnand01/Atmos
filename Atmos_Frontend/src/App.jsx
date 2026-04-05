@@ -1,9 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import useSound from "use-sound";
-
-const NAV_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3";
 import { ReactLenis } from 'lenis/react';
 import { Toaster } from "react-hot-toast";
 
@@ -29,17 +26,6 @@ function AnimatedRoutes() {
   const location = useLocation();
   const { state, dispatch } = useUI();
   const { isAuthModalOpen, isAuthenticated } = state;
-
-  const [playNavSound] = useSound(NAV_SOUND_URL, { volume: 0.2 });
-  const isInitialMount = useRef(true);
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    playNavSound();
-  }, [location.pathname, playNavSound]);
 
   return (
     <>

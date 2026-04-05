@@ -1,6 +1,6 @@
 package com.itvedant.atmos.Controller;
 
-import com.itvedant.atmos.Entity.Booking;
+
 import com.itvedant.atmos.Entity.Event;
 import com.itvedant.atmos.Service.EventService;
 import org.springframework.http.ResponseEntity;
@@ -14,15 +14,16 @@ import java.util.Map;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
+import lombok.RequiredArgsConstructor;
+
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/events")
 public class EventController {
 
     private final EventService eventService;
 
-    public EventController(EventService eventService) {
-        this.eventService = eventService;
-    }
+
 
     // get all
     @GetMapping
@@ -82,8 +83,18 @@ public class EventController {
     }
 
     @PostMapping
-    public ResponseEntity<Event> createEvent(@RequestBody Event event) {
-        return ResponseEntity.ok(eventService.createEvent(event));
+    public ResponseEntity<?> createEvent(@RequestBody Event event) {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getPrincipal() == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        Long loggedInUserId = (Long) auth.getPrincipal();
+
+        try {
+            return ResponseEntity.ok(eventService.createEvent(event, loggedInUserId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}")
@@ -98,8 +109,13 @@ public class EventController {
     }
 
     @PostMapping("/{eventId}/book/{userId}")
-    public ResponseEntity<Booking> bookEvent(@PathVariable Long eventId, @PathVariable Long userId) {
-        Booking booking = eventService.bookEvent(userId, eventId);
-        return ResponseEntity.ok(booking);
+    public ResponseEntity<?> bookEvent(@PathVariable Long userId, 
+                                       @PathVariable Long eventId,
+                                       @RequestParam(defaultValue = "1") Integer quantity) {
+        try {
+            return ResponseEntity.ok(eventService.bookEvent(userId, eventId, quantity));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

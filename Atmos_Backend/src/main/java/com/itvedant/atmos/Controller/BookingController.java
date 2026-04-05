@@ -10,15 +10,16 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
+
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/bookings")
 public class BookingController {
 
     private final BookingService bookingService;
 
-    public BookingController(BookingService bookingService) {
-        this.bookingService = bookingService;
-    }
+
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getUserBookings(@PathVariable Long userId) {

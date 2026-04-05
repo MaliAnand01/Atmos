@@ -1,7 +1,9 @@
 package com.itvedant.atmos.Entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
@@ -9,7 +11,9 @@ import lombok.AllArgsConstructor;
 @Table(name = "wishlists", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"user_id", "event_id"})
 })
-@Data
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Wishlist {

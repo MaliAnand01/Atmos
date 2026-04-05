@@ -1,41 +1,21 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, CheckCircle2, AlertTriangle, CreditCard, Loader2, IdCard, Calendar, Lock } from "lucide-react";
+import { X, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 import ClayButton from "./ClayButton";
 import { useState, useEffect, useRef } from "react";
 import { api } from "../services/api";
 import { getUser } from "../services/authStore";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import gsap from "gsap";
 import toast from "react-hot-toast";
 
-const paymentSchema = z.object({
-  cardNumber: z.string().min(16, "Invalid card number").max(19),
-  expiry: z.string().regex(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/, "Invalid expiration date"),
-  cvv: z.string().min(3, "CVV required").max(4),
-  cardHolder: z.string().min(3, "Cardholder name required"),
-});
-
 export default function CheckoutModal({ isOpen, onClose, eventName, eventId, price = 499 }) {
-  const [step, setStep] = useState(1); // 1 = confirm, 2 = card details, 3 = processing, 4 = success, 5 = error
+  const [step, setStep] = useState(1); 
+  const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [bookingId, setBookingId] = useState(null);
   const navigate = useNavigate();
   const spinnerRef = useRef(null);
   const user = getUser();
-
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(paymentSchema),
-    defaultValues: {
-        cardNumber: "4242 4242 4242 4242",
-        expiry: "12/28",
-        cvv: "123",
-        cardHolder: user?.username || ""
-    }
-  });
 
   useEffect(() => {
     if (step === 3) {
@@ -53,7 +33,7 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
 
   if (!isOpen) return null;
 
-  const handleInitialConfirm = async () => {
+  const handleRazorpayPayment = async () => {
     if (!user) {
       onClose();
       navigate("/?auth=true");
@@ -62,12 +42,61 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
 
     setLoading(true);
     setErrorMsg("");
+    
     try {
-      const booking = await api.post(`/events/${eventId}/book/${user.id}`, {});
-      setBookingId(booking.id);
-      setStep(2); // Move to Atmos Pay card entry
+      // 1. Create Booking
+      const booking = await api.post(`/events/${eventId}/book/${user.id}?quantity=${quantity}`, {});
+      
+      // 2. Create Razorpay Order
+      const orderData = await api.post(`/payments/create-order/${booking.id}`);
+      
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Atmos",
+        description: `Ticket for ${eventName}`,
+        order_id: orderData.orderId,
+        handler: async (response) => {
+          setStep(3); 
+          try {
+            // 3. Verify Payment
+            const verifyResp = await api.post("/payments/verify-payment", {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+
+            if (verifyResp.status === "success") {
+              setStep(4);
+              toast.success("Payment successful! Your ticket is secured.");
+            } else {
+              throw new Error("Verification failed.");
+            }
+          } catch (err) {
+            setErrorMsg("Payment verification failed. Please contact support.");
+            setStep(5);
+          }
+        },
+        prefill: {
+          name: user.username,
+          email: user.email || "",
+        },
+        theme: {
+          color: "#00F0FF",
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+      
     } catch (err) {
-      const msg = err.message || "Booking failed.";
+      const msg = err.message || "Checkout failed.";
       setErrorMsg(msg);
       toast.error(msg);
       setStep(5);
@@ -76,33 +105,9 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
     }
   };
 
-  const onPaymentSubmit = async (data) => {
-    setStep(3); // Start processing pulse
-    
-    // Artificial latency for effect
-    await new Promise(r => setTimeout(r, 2500));
-    
-    try {
-      const resp = await api.post(`/payments/atmos-pay`, {
-        bookingId: bookingId,
-        cardNumber: data.cardNumber
-      });
-      
-      if (resp.status === "success") {
-        setStep(4); // Pulse Secured
-        toast.success("Payment successful! Your ticket is secured.");
-      } else {
-        setErrorMsg(resp.message || "Frequency mismatch.");
-        setStep(5);
-      }
-    } catch {
-      setErrorMsg("Void interference detected. Payment failed.");
-      setStep(5);
-    }
-  };
-
   const handleClose = () => {
     setStep(1);
+    setQuantity(1);
     setErrorMsg("");
     navigate("/tickets")
     onClose();
@@ -126,7 +131,6 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             className="relative w-full max-w-xl bg-clay-surface border border-white/5 rounded-[2.5rem] shadow-clay overflow-hidden"
           >
-            {/* Top Branding Bar */}
             <div className="bg-white/5 p-4 flex justify-between items-center border-b border-white/5">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-chill-blue animate-pulse" />
@@ -149,9 +153,17 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
                             <p className="text-text-secondary text-[10px] uppercase tracking-[0.3em] mb-2">Selected Event</p>
                             <p className="text-xl font-display font-bold text-white">{eventName}</p>
                             <div className="border-t border-white/10 my-4 border-dashed" />
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-text-secondary text-sm">Tickets (Max 10)</span>
+                                <div className="flex items-center gap-3">
+                                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors">-</button>
+                                  <span className="font-bold text-white w-4 text-center">{quantity}</span>
+                                  <button onClick={() => setQuantity(Math.min(10, quantity + 1))} className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors">+</button>
+                                </div>
+                            </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-text-secondary text-sm">Entry Pass</span>
-                                <span className="font-bold text-chill-blue text-xl">₹{price}</span>
+                                <span className="text-text-secondary text-sm">Total Pass Value</span>
+                                <span className="font-bold text-chill-blue text-2xl">₹{price * quantity}</span>
                             </div>
                         </div>
                         
@@ -159,74 +171,10 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
                           disabled={loading}
                           className="w-full text-void bg-chill-blue font-bold py-4 rounded-xl shadow-[0_0_30px_rgba(0,240,255,0.2)]"
                           variant="primary"
-                          onClick={handleInitialConfirm}
+                          onClick={handleRazorpayPayment}
                         >
-                          {loading ? "Processing..." : "Continue to Payment"}
+                          {loading ? "Initializing..." : "Secure with Razorpay"}
                         </ClayButton>
-                    </motion.div>
-                )}
-
-                {step === 2 && (
-                    <motion.div initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex flex-col gap-6 text-left">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-display font-bold">Atmos Pay</h2>
-                            <div className="flex gap-1">
-                                <span className="w-8 h-5 bg-white/10 rounded border border-white/5" />
-                                <span className="w-8 h-5 bg-chill-blue/20 rounded border border-chill-blue/10" />
-                            </div>
-                        </div>
-
-                        <form onSubmit={handleSubmit(onPaymentSubmit)} className="space-y-4">
-                            <div className="relative">
-                                <IdCard className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
-                                <input
-                                    {...register("cardNumber")}
-                                    placeholder="4242 4242 4242 4242"
-                                    className="w-full bg-void border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-chill-blue/50 transition-colors"
-                                />
-                                {errors.cardNumber && <p className="text-[10px] text-energy-pink mt-1 ml-4 uppercase tracking-wider">{errors.cardNumber.message}</p>}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="relative">
-                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
-                                    <input
-                                        {...register("expiry")}
-                                        placeholder="MM/YY"
-                                        className="w-full bg-void border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-chill-blue/50 transition-colors"
-                                    />
-                                    {errors.expiry && <p className="text-[10px] text-energy-pink mt-1 ml-4 uppercase tracking-wider">{errors.expiry.message}</p>}
-                                </div>
-                                <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
-                                    <input
-                                        {...register("cvv")}
-                                        placeholder="CVV"
-                                        type="password"
-                                        className="w-full bg-void border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-chill-blue/50 transition-colors"
-                                    />
-                                    {errors.cvv && <p className="text-[10px] text-energy-pink mt-1 ml-4 uppercase tracking-wider">{errors.cvv.message}</p>}
-                                </div>
-                            </div>
-
-                            <div className="relative">
-                                <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={20} />
-                                <input
-                                    {...register("cardHolder")}
-                                    placeholder="CARDHOLDER NAME"
-                                    className="w-full bg-void border border-white/5 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-chill-blue/50 transition-colors uppercase"
-                                />
-                                {errors.cardHolder && <p className="text-[10px] text-energy-pink mt-1 ml-4 uppercase tracking-wider">{errors.cardHolder.message}</p>}
-                            </div>
-
-                            <ClayButton
-                                type="submit"
-                                className="w-full text-void bg-chill-blue font-bold py-4 rounded-xl mt-4"
-                                variant="primary"
-                            >
-                                Pay ₹{price}
-                            </ClayButton>
-                        </form>
                     </motion.div>
                 )}
 
@@ -239,8 +187,8 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
                             </div>
                         </div>
                         <div className="text-center">
-                            <h2 className="text-2xl font-display font-bold text-white mb-2 tracking-wide">Processing Payment</h2>
-                            <p className="text-text-secondary text-sm animate-pulse">Verifying your transaction...</p>
+                            <h2 className="text-2xl font-display font-bold text-white mb-2 tracking-wide">Finalizing Booking</h2>
+                            <p className="text-text-secondary text-sm animate-pulse">Verifying your transaction with Atmos...</p>
                         </div>
                     </motion.div>
                 )}

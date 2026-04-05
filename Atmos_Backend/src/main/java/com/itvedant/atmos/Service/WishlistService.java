@@ -14,17 +14,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class WishlistService {
     private final WishlistRepository wishlistRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
 
-    public WishlistService(WishlistRepository wishlistRepository, UserRepository userRepository, EventRepository eventRepository) {
-        this.wishlistRepository = wishlistRepository;
-        this.userRepository = userRepository;
-        this.eventRepository = eventRepository;
-    }
+
 
     @Transactional
     public String toggleWishlist(Long userId, Long eventId) {

@@ -7,15 +7,16 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/venues")
 public class VenueController {
 
     private final VenueService venueService;
 
-    public VenueController(VenueService venueService) {
-        this.venueService = venueService;
-    }
+
 
     @PostMapping
     public ResponseEntity<Venue> createVenue(@RequestBody Venue venue) {

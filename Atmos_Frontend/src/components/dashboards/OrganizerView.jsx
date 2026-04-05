@@ -1,94 +1,48 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { 
-    Image, 
     Check, 
     Plus, 
     MapPin, 
     BarChart3, 
     Pencil, 
     Trash2,
-    Info,
-    Link
+    Calendar,
+    Users,
+    ArrowRight
 } from "lucide-react";
+import toast from "react-hot-toast";
 import ClayCard from "../ClayCard";
 import ClayButton from "../ClayButton";
 import { api, getImageUrl } from "../../services/api";
 import { getUser } from "../../services/authStore";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import toast from "react-hot-toast";
+import AnalyticsCharts from "./AnalyticsCharts";
+import EventFormModal from "./EventFormModal";
 
-const eventSchema = z.object({
-    title: z.string().min(3, "Title must be at least 3 characters"),
-    description: z.string().min(10, "Description must be at least 10 characters"),
-    tagline: z.string().optional(),
-    energyLevel: z.coerce.number().min(1).max(10),
-    venueId: z.string().min(1, "Please select a venue"),
-    capacity: z.coerce.number().min(1, "Capacity must be at least 1"),
-    price: z.coerce.number().min(0, "Price cannot be negative"),
-    dateTime: z.string().refine((val) => {
-        const date = new Date(val);
-        return date > new Date();
-    }, { message: "Please select a future date and time" }),
-    imageUrl: z.string().url("Please enter a valid image URL").optional().or(z.literal("")),
-    ageLimit: z.string().optional(),
-    dressCode: z.string().optional(),
-    doorPolicy: z.string().optional(),
-    performerName: z.string().optional(),
-    performerImage: z.string().optional(),
-    performerBio: z.string().optional(),
-    tourName: z.string().optional(),
-});
-
-export default function OrganizerView() {
-    const [step, setStep] = useState(1);
+export default function OrganizerView({ activeTab, setActiveTab }) {
+    const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState(null);
     const [myEvents, setMyEvents] = useState([]);
     const [venues, setVenues] = useState([]);
     const [bookings, setBookings] = useState([]);
-    const [activeTab, setActiveTab] = useState("events"); // "events" or "bookings"
     const [loading, setLoading] = useState(true);
     const [bookingsLoading, setBookingsLoading] = useState(false);
-    const user = getUser();
-    
-    // ui states
-    const [publishSuccess, setPublishSuccess] = useState(false);
-    const [editingEventId, setEditingEventId] = useState(null);
-
-    const {
-        register,
-        handleSubmit,
-        trigger,
-        watch,
-        setValue,
-        reset,
-        formState: { errors },
-    } = useForm({
-        resolver: zodResolver(eventSchema),
-        defaultValues: {
-            energyLevel: 5,
-            capacity: 100,
-            price: 499,
-        }
-    });
-
-    const energyLevel = watch("energyLevel");
-
+    const user = useMemo(() => getUser(), []);
 
     useEffect(() => {
-        fetchMyEvents();
-        fetchVenues();
-        fetchBookings();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        if (user?.id) {
+            fetchMyEvents();
+            fetchVenues();
+            fetchBookings();
+        }
+    }, [user?.id]);
 
     const fetchBookings = async () => {
         if (!user) return;
         setBookingsLoading(true);
         try {
             const data = await api.get(`/bookings/organizer/${user.id}`, true);
-            setBookings(data);
+            setBookings(data.filter(b => b.status === "ACTIVE"));
         } catch (err) {
             console.error("Failed to fetch organizer bookings:", err);
         } finally {
@@ -98,6 +52,7 @@ export default function OrganizerView() {
 
     const fetchMyEvents = async () => {
         if (!user) return;
+        setLoading(true);
         try {
             const data = await api.get(`/events/organizer/${user.id}`, true);
             setMyEvents(data);
@@ -112,96 +67,19 @@ export default function OrganizerView() {
         try {
             const data = await api.get('/venues');
             setVenues(data);
-            if (data.length > 0) setValue("venueId", data[0].id.toString());
         } catch (err) {
             console.error("Failed to fetch venues:", err);
         }
     };
 
-    const nextStep = async () => {
-        let isStepValid = false;
-        if (step === 1) {
-            isStepValid = await trigger(["title", "description"]);
-        } else if (step === 2) {
-            isStepValid = await trigger(["energyLevel", "capacity", "price", "venueId", "dateTime"]);
-        } else if (step === 3) {
-            isStepValid = await trigger(["ageLimit", "dressCode", "doorPolicy", "imageUrl"]);
-        } else if (step === 4) {
-            // step 4 submit
-            await handleSubmit(handleFinalPublish)();
-            return;
-        }
-
-        if (isStepValid) {
-            setStep(s => Math.min(4, s + 1));
-        }
-    };
-    
-    const prevStep = () => setStep(s => Math.max(1, s - 1));
-
-    const handleFinalPublish = async (data) => {
-        try {
-            const imageUrl = data.imageUrl?.trim() || "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80";
-
-            const eventPayload = {
-                title: data.title,
-                description: data.description,
-                tagline: data.tagline,
-                energyLevel: parseInt(data.energyLevel),
-                imageUrl,
-                dateTime: data.dateTime,
-                totalCapacity: parseInt(data.capacity),
-                availableCapacity: parseInt(data.capacity),
-                price: parseFloat(data.price),
-                venue: { id: parseInt(data.venueId) },
-                organizerId: user.id,
-                ageLimit: data.ageLimit,
-                dressCode: data.dressCode,
-                doorPolicy: data.doorPolicy,
-                performerName: data.performerName,
-                performerImage: data.performerImage,
-                performerBio: data.performerBio,
-                tourName: data.tourName,
-            };
-
-            await api[editingEventId ? 'put' : 'post'](
-                editingEventId ? `/events/${editingEventId}` : '/events', 
-                eventPayload
-            );
-            
-            setPublishSuccess(true);
-            setStep(5);
-            fetchMyEvents();
-            toast.success(editingEventId ? "Event updated successfully!" : "Event published successfully!");
-        } catch (error) {
-            console.error("Publish failed:", error);
-            setPublishSuccess(false);
-            setStep(5);
-            toast.error("Failed to publish event. Please check your data.");
-        }
+    const handleEventSuccess = () => {
+        fetchMyEvents();
+        fetchBookings();
     };
 
     const handleEdit = (event) => {
-        setEditingEventId(event.id);
-        reset({
-            title: event.title,
-            description: event.description,
-            energyLevel: event.energyLevel,
-            venueId: event.venue.id.toString(),
-            capacity: event.totalCapacity,
-            price: event.price,
-            dateTime: event.dateTime,
-            tagline: event.tagline || "",
-            imageUrl: event.imageUrl || "",
-            ageLimit: event.ageLimit || "",
-            dressCode: event.dressCode || "",
-            doorPolicy: event.doorPolicy || "",
-            performerName: event.performerName || "",
-            performerImage: event.performerImage || "",
-            performerBio: event.performerBio || "",
-            tourName: event.tourName || "",
-        });
-        setStep(1);
+        setSelectedEvent(event);
+        setIsEventModalOpen(true);
     };
 
     const handleDeleteEvent = async (id) => {
@@ -209,391 +87,283 @@ export default function OrganizerView() {
         try {
             await api.delete(`/events/${id}`);
             fetchMyEvents();
-            toast.success("Event deleted and bookings cancelled.");
+            toast.success("Event deleted successfully.");
         } catch (err) {
             console.error("Failed to delete event:", err);
             toast.error("Failed to delete event.");
         }
     };
 
-    const resetForm = () => {
-        setEditingEventId(null);
-        reset({
-            title: "",
-            description: "",
-            energyLevel: 5,
-            venueId: venues.length > 0 ? venues[0].id.toString() : "",
-            capacity: 100,
-            price: 499,
-            dateTime: "",
-            tagline: "",
-            imageUrl: "",
-            ageLimit: "",
-            dressCode: "",
-            doorPolicy: "",
-            performerName: "",
-            performerImage: "",
-            performerBio: "",
-            tourName: "",
-        });
-        setStep(1);
-    };
-
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
-                <div>
-                    <h2 className="text-3xl font-display font-bold">Organizer Dashboard</h2>
-                    <p className="text-text-secondary text-sm mt-1">Manage your events and track bookings</p>
-                </div>
-                <div className="flex bg-clay-surface p-1 rounded-2xl border border-white/5">
-                    <ClayButton 
-                        onClick={() => setActiveTab("events")}
-                        variant={activeTab === 'events' ? 'accent' : 'ghost'}
-                        className="rounded-xl text-sm py-2"
-                    >
-                        Events
-                    </ClayButton>
-                    <ClayButton 
-                        onClick={() => setActiveTab("bookings")}
-                        variant={activeTab === 'bookings' ? 'accent' : 'ghost'}
-                        className="rounded-xl text-sm py-2"
-                    >
-                        Bookings
-                    </ClayButton>
-                </div>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* main content */}
-                <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
-                    {activeTab === "events" ? (
-                        <>
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-xl font-bold font-display opacity-80">My Events</h3>
-                                <span className="flex items-center gap-1 text-xs text-text-secondary"><BarChart3 size={14} /> {myEvents.length} Active</span>
-                            </div>
-                            {loading ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {[1, 2].map(i => <div key={i} className="h-40 bg-clay-surface rounded-3xl animate-pulse" />)}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+            <AnimatePresence mode="popLayout">
+                {activeTab === "overview" && (
+                    <motion.div key="over" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <ClayCard className="p-6 border border-white/5 bg-void/20 flex flex-col justify-center items-center text-center">
+                                <div className="p-3 bg-chill-blue/10 rounded-2xl text-chill-blue mb-4 shadow-[0_0_15px_rgba(0,240,255,0.1)]">
+                                    <BarChart3 size={32} />
                                 </div>
-                            ) : myEvents.length === 0 ? (
-                                <div className="p-12 border border-dashed border-white/10 rounded-3xl text-center bg-void/30">
-                                    <p className="text-text-secondary">No events yet. Use the form to create your first event.</p>
+                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mt-1">Total Active Events</p>
+                                <h4 className="text-4xl font-bold font-display mt-2">{myEvents.length}</h4>
+                            </ClayCard>
+
+                            <ClayCard className="p-6 border border-white/5 bg-void/20 flex flex-col justify-center items-center text-center">
+                                <div className="p-3 bg-orange-400/10 rounded-2xl text-orange-400 mb-4 shadow-[0_0_15px_rgba(251,146,60,0.1)]">
+                                    <Check size={32} />
                                 </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {myEvents.map(event => (
-                                        <ClayCard key={event.id} className="group hover:border-chill-blue/30 transition-all p-0 overflow-hidden border border-white/5">
-                                            <div className="h-32 w-full overflow-hidden relative">
-                                                <img src={getImageUrl(event.imageUrl)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-60" />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-void to-transparent" />
-                                                <div className="absolute bottom-3 left-4">
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest bg-chill-blue/20 text-chill-blue px-2 py-1 rounded-md border border-chill-blue/30">
-                                                        Energy {event.energyLevel}
-                                                    </span>
+                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mt-1">Total Bookings</p>
+                                <h4 className="text-4xl font-bold font-display mt-2">{bookings.length}</h4>
+                            </ClayCard>
+
+                            <ClayCard className="p-6 border border-white/5 bg-void/20 flex flex-col justify-center items-center text-center relative overflow-hidden group hover:border-chill-blue/30 cursor-pointer transition-all" onClick={() => { setSelectedEvent(null); setIsEventModalOpen(true); }}>
+                                <div className="absolute inset-0 bg-chill-blue/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="p-3 bg-white/5 rounded-2xl text-white mb-4 group-hover:bg-chill-blue group-hover:text-void transition-colors">
+                                    <Plus size={32} />
+                                </div>
+                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mt-1">Quick Action</p>
+                                <h4 className="text-xl font-bold font-display mt-2">Publish New Event</h4>
+                            </ClayCard>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                             <div className="space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-xl font-bold font-display opacity-80">Recent Events</h3>
+                                    <button onClick={() => setActiveTab("events")} className="flex items-center gap-1 text-[10px] font-bold text-chill-blue uppercase tracking-widest hover:underline">
+                                        View All <ArrowRight size={12} />
+                                    </button>
+                                </div>
+
+                                {loading ? (
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {[1, 2].map(i => <div key={i} className="h-40 bg-clay-surface rounded-3xl animate-pulse" />)}
+                                    </div>
+                                ) : myEvents.length === 0 ? (
+                                    <div className="p-12 border border-dashed border-white/10 rounded-3xl text-center bg-void/30">
+                                        <p className="text-text-secondary">No events created yet.</p>
+                                        <ClayButton variant="secondary" className="mt-4" onClick={() => { setSelectedEvent(null); setIsEventModalOpen(true); }}>Create your first event</ClayButton>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {myEvents.slice(0, 3).map(event => (
+                                            <ClayCard key={event.id} className="p-0 border border-white/5 bg-void/20 overflow-hidden group flex h-28">
+                                                <div className="w-28 h-full relative overflow-hidden">
+                                                    <img src={getImageUrl(event.imageUrl)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={event.title} />
                                                 </div>
+                                                <div className="flex-1 p-3 flex flex-col justify-between">
+                                                    <div className="flex justify-between items-start">
+                                                        <h4 className="font-bold text-sm truncate max-w-[150px]">{event.title}</h4>
+                                                        <div className="text-[9px] bg-chill-blue/10 text-chill-blue px-2 py-0.5 rounded font-bold uppercase">
+                                                            {event.totalCapacity - event.availableCapacity} / {event.totalCapacity} Sold
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] text-text-secondary"><MapPin size={10} className="inline mr-1" /> {event.venue?.name}</span>
+                                                        <button onClick={() => handleEdit(event)} className="text-xs text-chill-blue hover:underline">Edit</button>
+                                                    </div>
+                                                </div>
+                                            </ClayCard>
+                                        ))}
+                                    </div>
+                                )}
+                             </div>
+
+                             <div className="space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-xl font-bold font-display opacity-80">Latest Bookings</h3>
+                                    <button onClick={() => setActiveTab("bookings")} className="flex items-center gap-1 text-[10px] font-bold text-chill-blue uppercase tracking-widest hover:underline">
+                                        View All <ArrowRight size={12} />
+                                    </button>
+                                </div>
+                                
+                                {bookingsLoading ? (
+                                    <div className="space-y-4">
+                                        {[1, 2, 3].map(i => <div key={i} className="h-20 bg-clay-surface rounded-2xl animate-pulse" />)}
+                                    </div>
+                                ) : bookings.length === 0 ? (
+                                    <div className="p-12 border border-dashed border-white/10 rounded-3xl text-center bg-void/30">
+                                        <p className="text-text-secondary italic">No bookings yet.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {bookings.slice(0, 4).map(booking => (
+                                            <ClayCard key={booking.id} className="p-3 border border-white/5 bg-white/5 flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-full bg-chill-blue/10 flex items-center justify-center text-chill-blue text-xs font-bold">
+                                                        {booking.user.username[0].toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-xs">{booking.user.username}</p>
+                                                        <p className="text-[8px] text-text-secondary uppercase">{booking.event.title}</p>
+                                                    </div>
+                                                </div>
+                                                <span className="text-[10px] font-bold">₹{booking.event.price}</span>
+                                            </ClayCard>
+                                        ))}
+                                    </div>
+                                )}
+                             </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {activeTab === "events" && (
+                    <motion.div key="ev" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-3xl font-display font-bold">My Events</h2>
+                                <p className="text-text-secondary text-sm">Manage and monitor all your published events</p>
+                            </div>
+                            <ClayButton onClick={() => { setSelectedEvent(null); setIsEventModalOpen(true); }} variant="primary" className="shadow-[0_0_20px_rgba(0,240,255,0.3)]">
+                                + Create New
+                            </ClayButton>
+                        </div>
+
+                        {loading ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {[1, 2, 3].map(i => <div key={i} className="h-64 bg-clay-surface rounded-3xl animate-pulse" />)}
+                            </div>
+                        ) : myEvents.length === 0 ? (
+                            <div className="p-20 border border-dashed border-white/10 rounded-3xl text-center bg-void/30">
+                                <Calendar size={48} className="mx-auto text-text-secondary opacity-20 mb-4" />
+                                <h3 className="text-xl font-bold mb-2">No events found</h3>
+                                <p className="text-text-secondary mb-6">Ready to host something amazing?</p>
+                                <ClayButton variant="primary" onClick={() => { setSelectedEvent(null); setIsEventModalOpen(true); }}>Create Event</ClayButton>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {myEvents.map(event => (
+                                    <ClayCard key={event.id} className="p-0 border border-white/5 bg-void/20 overflow-hidden group hover:border-chill-blue/30 transition-all flex flex-col h-full">
+                                        <div className="relative h-40 overflow-hidden">
+                                            <img src={getImageUrl(event.imageUrl)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={event.title} />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-void via-transparent to-transparent opacity-60" />
+                                            <div className="absolute top-3 left-3 bg-void/80 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10 text-[10px] font-bold text-chill-blue">
+                                                ₹{event.price}
                                             </div>
-                                            <div className="p-5">
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <h4 className="text-lg font-bold truncate pr-4">{event.title}</h4>
-                                                    
+                                        </div>
+                                        <div className="p-5 flex-1 flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <h4 className="font-bold text-lg leading-tight group-hover:text-chill-blue transition-colors">{event.title}</h4>
                                                     <div className="flex gap-2">
-                                                        <ClayButton variant="icon" onClick={() => handleEdit(event)} className="p-2 bg-white/5 hover:bg-chill-blue/20 text-text-secondary hover:text-chill-blue rounded-lg transition-all">
-                                                            <Pencil size={16} />
-                                                        </ClayButton>
-                                                        <ClayButton variant="icon" onClick={() => handleDeleteEvent(event.id)} className="p-2 bg-white/5 hover:bg-energy-pink/20 text-text-secondary hover:text-energy-pink rounded-lg transition-all">
-                                                            <Trash2 size={16} />
-                                                        </ClayButton>
+                                                        <button onClick={() => handleEdit(event)} className="p-1.5 bg-white/5 rounded-lg text-text-secondary hover:text-white transition-colors" title="Edit"><Pencil size={14}/></button>
+                                                        <button onClick={() => handleDeleteEvent(event.id)} className="p-1.5 bg-white/5 rounded-lg text-text-secondary hover:text-energy-pink transition-colors" title="Delete"><Trash2 size={14}/></button>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-col gap-2 text-xs text-text-secondary">
-                                                    <div className="flex items-center gap-2"><MapPin size={14} className="text-chill-blue" /> {event.venue?.name || 'Venue tbd'}</div>
-                                                    <div className="flex items-center gap-2 font-medium">
-                                                        <span className="text-chill-blue">{event.totalCapacity - event.availableCapacity}</span> / {event.totalCapacity} Sold
+                                                <div className="space-y-2 mb-4">
+                                                    <p className="text-[10px] text-text-secondary font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                                        <MapPin size={12} className="text-chill-blue" /> {event.venue?.name}
+                                                    </p>
+                                                    <p className="text-[10px] text-text-secondary font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                                        <Calendar size={12} className="text-orange-400" /> {new Date(event.dateTime).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="pt-4 border-t border-white/5">
+                                                <div className="flex justify-between text-[10px] font-bold uppercase mb-2">
+                                                    <span className="text-text-secondary">Sales</span>
+                                                    <span className="text-chill-blue">{Math.round(((event.totalCapacity - event.availableCapacity) / event.totalCapacity) * 100)}%</span>
+                                                </div>
+                                                <div className="h-1 options-void bg-void rounded-full overflow-hidden">
+                                                    <div className="h-full bg-chill-blue shadow-[0_0_10px_#00f0ff]" style={{ width: `${((event.totalCapacity - event.availableCapacity) / event.totalCapacity) * 100}%` }} />
+                                                </div>
+                                                <div className="flex justify-between mt-2 text-[10px] text-text-secondary">
+                                                    <span>{event.totalCapacity - event.availableCapacity} Booked</span>
+                                                    <span>{event.availableCapacity} Remaining</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </ClayCard>
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+
+                {activeTab === "bookings" && (
+                    <motion.div key="bk" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                        <div className="flex justify-between items-end">
+                            <div>
+                                <h2 className="text-3xl font-display font-bold">Bookings</h2>
+                                <p className="text-text-secondary text-sm">Real-time ticket sales and attendee list</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Total Revenue</p>
+                                <p className="text-2xl font-bold font-display text-green-400">₹{bookings.reduce((sum, b) => sum + (b.event.price || 0), 0).toLocaleString()}</p>
+                            </div>
+                        </div>
+
+                        {bookingsLoading ? (
+                            <div className="space-y-4">
+                                {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-20 bg-clay-surface rounded-2xl animate-pulse" />)}
+                            </div>
+                        ) : bookings.length === 0 ? (
+                            <div className="p-20 border border-dashed border-white/10 rounded-3xl text-center bg-void/30">
+                                <Users size={48} className="mx-auto text-text-secondary opacity-20 mb-4" />
+                                <h3 className="text-xl font-bold mb-2">No bookings yet</h3>
+                                <p className="text-text-secondary mb-6">Your ticket sales will appear here as people book.</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-hidden rounded-3xl border border-white/5 bg-void/20">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-white/5 text-[10px] font-bold uppercase tracking-widest text-text-secondary">
+                                            <th className="px-6 py-4">Attendee</th>
+                                            <th className="px-6 py-4">Event</th>
+                                            <th className="px-6 py-4">Price</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4 text-right">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {bookings.map(booking => (
+                                            <tr key={booking.id} className="hover:bg-white/5 transition-colors group">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-chill-blue/10 flex items-center justify-center text-chill-blue font-bold text-xs ring-1 ring-chill-blue/20">
+                                                            {booking.user.username[0].toUpperCase()}
+                                                        </div>
+                                                        <span className="font-bold text-sm tracking-wide">{booking.user.username}</span>
                                                     </div>
-                                                </div>
-                                            </div>
-                                        </ClayCard>
-                                    ))}
-                                </div>
-                            )}
-                        </>
-                    ) : (
-                        <>
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-xl font-bold font-display opacity-80">Recent Bookings</h3>
-                                <ClayButton variant="ghost" className="p-0 hover:bg-transparent" onClick={fetchBookings}><span className="text-xs text-chill-blue hover:underline">Refresh</span></ClayButton>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-xs text-text-secondary group-hover:text-white transition-colors">{booking.event.title}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-xs font-bold">₹{booking.event.price}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-chill-blue/20 text-chill-blue border border-chill-blue/30">
+                                                        Confirmed
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <span className="text-[10px] text-text-secondary">{new Date(booking.bookingTime).toLocaleDateString()}</span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
-                            {bookingsLoading ? (
-                                <div className="space-y-4">
-                                    {[1, 2, 3].map(i => <div key={i} className="h-20 bg-clay-surface rounded-2xl animate-pulse" />)}
-                                </div>
-                            ) : bookings.length === 0 ? (
-                                <div className="p-12 border border-dashed border-white/10 rounded-3xl text-center bg-void/30">
-                                    <p className="text-text-secondary">No bookings received yet.</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {bookings.map(booking => (
-                                        <ClayCard key={booking.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/5 border-white/5">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-chill-blue/10 flex items-center justify-center text-chill-blue">
-                                                    <Check size={20} />
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-bold text-sm">{booking.user.username}</h4>
-                                                    <p className="text-xs text-text-secondary">Booked <span className="text-white">{booking.event.title}</span></p>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col items-end gap-1">
-                                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${booking.status === 'ACTIVE' ? 'bg-chill-blue/20 text-chill-blue' : 'bg-energy-pink/20 text-energy-pink'}`}>
-                                                    {booking.status}
-                                                </span>
-                                                <p className="text-[10px] text-text-secondary">{new Date(booking.bookingTime).toLocaleDateString()}</p>
-                                            </div>
-                                        </ClayCard>
-                                    ))}
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
+                        )}
+                    </motion.div>
+                )}
 
-                {/* form */}
-                <div className="lg:col-span-1 order-1 lg:order-2">
-                    <ClayCard className="p-8 sticky top-24 border border-chill-blue/20 shadow-[0_0_30px_rgba(0,240,255,0.05)]">
-                        <div className="flex items-center gap-3 mb-8">
-                            <div className="p-2 bg-chill-blue/10 rounded-lg text-chill-blue">
-                                <Plus size={20} />
-                            </div>
-                            <h3 className="text-xl font-bold font-display">{editingEventId ? 'Edit Event' : 'New Event'}</h3>
-                            {editingEventId && (
-                                <ClayButton variant="ghost" onClick={resetForm} className="ml-auto text-xs text-text-secondary hover:text-white uppercase tracking-widest font-bold px-0 bg-transparent hover:bg-transparent">Cancel</ClayButton>
-                            )}
-                        </div>
-                        
-                        <div className="min-h-[250px] relative">
-                            <AnimatePresence mode="wait">
-                                {step === 1 && (
-                                    <motion.div key="step1" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Event Name</label>
-                                            <input 
-                                                {...register("title")}
-                                                type="text" 
-                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/20 text-sm font-body" 
-                                                placeholder="e.g., Midnight Techno Session" 
-                                            />
-                                            {errors.title && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.title.message}</p>}
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Short Tagline</label>
-                                            <input 
-                                                {...register("tagline")}
-                                                type="text" 
-                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/20 text-sm font-body" 
-                                                placeholder="Keep it catchy & short" 
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">About Event</label>
-                                            <textarea 
-                                                {...register("description")}
-                                                rows={3}
-                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/20 resize-none text-sm font-body" 
-                                                placeholder="Simple description of the vibe..." 
-                                            />
-                                            {errors.description && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.description.message}</p>}
-                                        </div>
-                                    </motion.div>
-                                )}
-                                {step === 2 && (
-                                    <motion.div key="step2" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Select Venue</label>
-                                            <select 
-                                                {...register("venueId")}
-                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all text-sm font-body appearance-none"
-                                            >
-                                                {venues.map(v => (
-                                                    <option key={v.id} value={v.id.toString()}>{v.name} - {v.address}</option>
-                                                ))}
-                                            </select>
-                                            {errors.venueId && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.venueId.message}</p>}
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Date & Time</label>
-                                            <input 
-                                                {...register("dateTime")}
-                                                type="datetime-local" 
-                                                className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all text-sm font-body" 
-                                            />
-                                            {errors.dateTime && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.dateTime.message}</p>}
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Capacity</label>
-                                                <input 
-                                                    {...register("capacity")}
-                                                    type="number" 
-                                                    className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all text-sm font-body" 
-                                                    placeholder="100"
-                                                />
-                                                {errors.capacity && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.capacity.message}</p>}
-                                            </div>
-                                            <div>
-                                                <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Price (₹)</label>
-                                                <input 
-                                                    {...register("price")}
-                                                    type="number" 
-                                                    className="w-full bg-void text-white p-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all text-sm font-body" 
-                                                    placeholder="499"
-                                                />
-                                                {errors.price && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.price.message}</p>}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="flex justify-between items-center mb-2">
-                                                <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary block font-body">Energy Level</label>
-                                                <span className="text-xs font-bold text-chill-blue">Level {energyLevel}</span>
-                                            </div>
-                                            <input 
-                                                {...register("energyLevel")}
-                                                type="range" 
-                                                min="1" 
-                                                max="10" 
-                                                className="w-full h-1.5 bg-void rounded-lg appearance-none cursor-pointer accent-chill-blue border border-white/5"
-                                            />
-                                            <div className="flex justify-between text-[8px] text-text-secondary font-bold uppercase mt-1">
-                                                <span>Chill</span>
-                                                <span>Balanced</span>
-                                                <span>High Energy</span>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-                                {step === 3 && (
-                                    <motion.div key="step3" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Age Limit</label>
-                                                <input {...register("ageLimit")} placeholder="e.g. 21+" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
-                                            </div>
-                                            <div>
-                                                <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Dress Code</label>
-                                                <input {...register("dressCode")} placeholder="e.g. Smart Casual" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Door Policy</label>
-                                            <input {...register("doorPolicy")} placeholder="e.g. Carry valid ID" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Event Image URL</label>
-                                            <div className="relative">
-                                                <Plus size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
-                                                <input
-                                                    {...register("imageUrl")}
-                                                    type="url"
-                                                    className="w-full bg-void text-white pl-8 pr-3 py-3 rounded-xl border border-white/5 focus:border-chill-blue/50 outline-none transition-all placeholder:text-white/20 text-sm font-body"
-                                                    placeholder="https://example.com/poster.jpg"
-                                                />
-                                            </div>
-                                            {errors.imageUrl && <p className="text-energy-pink text-[10px] mt-1 ml-1 font-body">{errors.imageUrl.message}</p>}
-                                        </div>
-                                        {/* preview */}
-                                        <div className="w-full h-32 rounded-xl overflow-hidden border border-white/5 bg-void flex items-center justify-center">
-                                            {watch("imageUrl") ? (
-                                                <img
-                                                    src={watch("imageUrl")}
-                                                    className="w-full h-full object-cover opacity-70"
-                                                    onError={(e) => { e.target.style.display = 'none'; }}
-                                                    onLoad={(e) => { e.target.style.display = 'block'; }}
-                                                />
-                                            ) : (
-                                                <div className="flex flex-col items-center gap-2 text-text-secondary">
-                                                    <Image size={36} className="opacity-20" />
-                                                    <p className="text-[10px] opacity-40 font-body">Image preview will appear here</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                )}
-                                {step === 4 && (
-                                    <motion.div key="step4" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
-                                        <div className="flex items-center gap-2 mb-2 text-chill-blue">
-                                            <Info size={14} />
-                                            <span className="text-[10px] font-bold uppercase tracking-widest">Artist Spotlight</span>
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Artist/Performer Name</label>
-                                            <input {...register("performerName")} placeholder="e.g. Jahnavi Harrison" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Tour Name (Optional)</label>
-                                            <input {...register("tourName")} placeholder="e.g. Transcendental Vibrations" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Artist Bio</label>
-                                            <textarea {...register("performerBio")} rows={3} placeholder="Tell us about the artist..." className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body resize-none" />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 block font-body">Artist Photo URL</label>
-                                            <input {...register("performerImage")} placeholder="Link to artist photo" className="w-full bg-void text-white p-3 rounded-xl border border-white/10 outline-none text-xs font-body" />
-                                        </div>
-                                    </motion.div>
-                                )}
-                                {step === 5 && (
-                                    <motion.div key="step4" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center justify-center text-center py-8">
-                                        {publishSuccess ? (
-                                            <>
-                                                <div className="w-16 h-16 rounded-full bg-chill-blue/10 flex items-center justify-center mb-4 border border-chill-blue/30 shadow-[0_0_20px_rgba(0,240,255,0.2)]">
-                                                    <Check size={32} className="text-chill-blue" />
-                                                </div>
-                                                <h4 className="text-xl font-bold mb-2">{editingEventId ? "Event Updated!" : "Event Created!"} 🎉</h4>
-                                                <p className="text-sm text-text-secondary">Your changes have been saved and the event is live.</p>
-                                                <ClayButton className="mt-6" variant="secondary" onClick={resetForm}>{editingEventId ? "Back to Dashboard" : "Create Another"}</ClayButton>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="w-16 h-16 rounded-full bg-energy-pink/10 flex items-center justify-center mb-4 border border-energy-pink/30">
-                                                    <Info size={32} className="text-energy-pink" />
-                                                </div>
-                                                <h4 className="text-xl font-bold mb-2">Something Went Wrong</h4>
-                                                <p className="text-sm text-text-secondary">We could not create the event. Please check your details and try again.</p>
-                                                <ClayButton className="mt-6" variant="primary" onClick={() => setStep(3)}>Try Again</ClayButton>
-                                            </>
-                                        )}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
+                {activeTab === "analytics" && (
+                     <motion.div key="ana" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                        <AnalyticsCharts />
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-                        <div className="flex gap-3 mt-8 border-t border-white/5 pt-6">
-                            {step < 5 && (
-                                <>
-                                    <ClayButton 
-                                        variant="secondary" 
-                                        onClick={prevStep} 
-                                        disabled={step === 1}
-                                        className="flex-1 text-xs py-2 disabled:opacity-20"
-                                    >
-                                        Back
-                                    </ClayButton>
-                                    <ClayButton 
-                                        variant="primary" 
-                                        onClick={nextStep} 
-                                        className={`flex-1 text-xs py-2 shadow-lg transition-all ${step === 4 ? "bg-chill-blue text-void hover:shadow-[0_0_20px_rgba(0,240,255,0.4)]" : "bg-white text-void"}`}
-                                    >
-                                        {step === 4 ? (editingEventId ? "Save Changes" : "Publish Event") : "Next"}
-                                    </ClayButton>
-                                </>
-                            )}
-                        </div>
-                    </ClayCard>
-                </div>
-            </div>
+            <EventFormModal 
+                isOpen={isEventModalOpen}
+                onClose={() => setIsEventModalOpen(false)}
+                onSuccess={handleEventSuccess}
+                initialData={selectedEvent}
+                venues={venues}
+            />
         </motion.div>
     );
 }

@@ -6,14 +6,15 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
+
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/wishlist")
 public class WishlistController {
     private final WishlistService wishlistService;
 
-    public WishlistController(WishlistService wishlistService) {
-        this.wishlistService = wishlistService;
-    }
+
 
     @PostMapping("/{userId}/{eventId}")
     public ResponseEntity<?> toggleWishlist(@PathVariable Long userId, @PathVariable Long eventId) {

@@ -15,18 +15,16 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class EventService {
     private final EventRepository eventRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
 
-    public EventService(EventRepository eventRepository, BookingRepository bookingRepository,
-            UserRepository userRepository) {
-        this.eventRepository = eventRepository;
-        this.bookingRepository = bookingRepository;
-        this.userRepository = userRepository;
-    }
+
 
     public List<Event> getAllEvents() {
         return eventRepository.findAllByActiveTrue();
@@ -75,44 +73,49 @@ public class EventService {
         ).stream().filter(Event::getActive).toList();
     }
 
-    public Event createEvent(Event event) {
+    public Event createEvent(Event event, Long loggedInUserId) {
         if (event == null) {
             throw new RuntimeException("Event data must not be null");
         }
         
-        // check approval
-        if (event.getOrganizerId() != null) {
-            User organizer = userRepository.findById(Objects.requireNonNull(event.getOrganizerId()))
-                .orElseThrow(() -> new RuntimeException("Organizer not found"));
-            
-            if (!"APPROVED".equalsIgnoreCase(organizer.getOrganizerStatus())) {
+        User executingUser = userRepository.findById(java.util.Objects.requireNonNull(loggedInUserId))
+            .orElseThrow(() -> new RuntimeException("User not found in context"));
+
+        if ("ROLE_ORGANIZER".equalsIgnoreCase(executingUser.getRole())) {
+            if (!"APPROVED".equalsIgnoreCase(executingUser.getOrganizerStatus())) {
                 throw new RuntimeException("Your account is pending verification. Event creation is restricted.");
             }
+            // Overwrite organizer ID for safety
+            event.setOrganizerId(loggedInUserId);
         }
         
         return eventRepository.save(Objects.requireNonNull(event));
     }
 
     @Transactional
-    public Booking bookEvent(Long userId, Long eventId) {
+    public Booking bookEvent(Long userId, Long eventId, Integer quantity) {
         if (userId == null || eventId == null) {
             throw new RuntimeException("User ID and Event ID must not be null");
+        }
+        if (quantity == null || quantity < 1 || quantity > 10) {
+            throw new RuntimeException("Validation Error: Quantity must be effectively constrained between 1 and 10.");
         }
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (event.getAvailableCapacity() <= 0) {
-            throw new RuntimeException("Event is sold out!");
+        if (event.getAvailableCapacity() < quantity) {
+            throw new RuntimeException("Not enough tickets left. Only " + event.getAvailableCapacity() + " remaining!");
         }
 
-        event.setAvailableCapacity(event.getAvailableCapacity() - 1);
+        event.setAvailableCapacity(event.getAvailableCapacity() - quantity);
         eventRepository.save(event);
 
         Booking booking = new Booking();
         booking.setUser(user);
         booking.setEvent(event);
+        booking.setQuantity(quantity);
         booking.setStatus("PENDING_PAYMENT");
 
         return bookingRepository.save(Objects.requireNonNull(booking));

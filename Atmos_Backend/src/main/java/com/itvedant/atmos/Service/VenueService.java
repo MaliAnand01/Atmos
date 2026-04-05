@@ -14,7 +14,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class VenueService {
 
     private final VenueRepository venueRepository;
@@ -22,15 +25,7 @@ public class VenueService {
     private final BookingRepository bookingRepository;
     private final WishlistRepository wishlistRepository;
 
-    public VenueService(VenueRepository venueRepository, 
-                        EventRepository eventRepository,
-                        BookingRepository bookingRepository,
-                        WishlistRepository wishlistRepository) {
-        this.venueRepository = venueRepository;
-        this.eventRepository = eventRepository;
-        this.bookingRepository = bookingRepository;
-        this.wishlistRepository = wishlistRepository;
-    }
+
 
     public Venue createVenue(Venue venue) {
         return venueRepository.save(Objects.requireNonNull(venue));

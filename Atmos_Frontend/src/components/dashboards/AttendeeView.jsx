@@ -14,6 +14,18 @@ export default function AttendeeView({ activeTab, setActiveTab }) {
     const [wishlist, setWishlist] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const activeBookings = useMemo(() => bookings.filter(b => b.status === "ACTIVE"), [bookings]);
+    
+    const sortedBookings = useMemo(() => {
+        return bookings
+            .filter(b => b.status !== "PENDING" && b.status !== "FAILED")
+            .sort((a, b) => {
+                if (a.status === "ACTIVE" && b.status !== "ACTIVE") return -1;
+                if (a.status !== "ACTIVE" && b.status === "ACTIVE") return 1;
+                return new Date(b.bookingTime || 0).getTime() - new Date(a.bookingTime || 0).getTime();
+            });
+    }, [bookings]);
+
     useEffect(() => {
         const fetchData = async () => {
             if (!user) return;
@@ -46,8 +58,6 @@ export default function AttendeeView({ activeTab, setActiveTab }) {
       }
     };
 
-    // Compute vibe stats from real bookings
-    const activeBookings = bookings.filter(b => b.status === "ACTIVE");
     const total = activeBookings.length || 1; // avoid div by zero
     const highEnergy = activeBookings.filter(b => b.event?.energyLevel >= 8).length;
     const chill      = activeBookings.filter(b => b.event?.energyLevel <= 3).length;
@@ -71,8 +81,8 @@ export default function AttendeeView({ activeTab, setActiveTab }) {
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <ClayCard className="flex flex-col items-center justify-center p-8 text-center shadow-clay border border-white/5 bg-void/20">
                                 <div className="mb-4 text-energy-pink drop-shadow-[0_0_8px_currentColor]"><Ticket size={32} /></div>
-                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Total Tickets</p>
-                                <p className="text-4xl font-bold font-display mt-2">{loading ? "..." : bookings.length}</p>
+                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Active Passes</p>
+                                <p className="text-4xl font-bold font-display mt-2">{loading ? "..." : activeBookings.length}</p>
                             </ClayCard>
                             <ClayCard className="flex flex-col items-center justify-center p-8 text-center shadow-clay border border-white/5 bg-void/20">
                                 <div className="mb-4 text-chill-blue drop-shadow-[0_0_8px_currentColor]"><Heart size={32} /></div>
@@ -144,31 +154,36 @@ export default function AttendeeView({ activeTab, setActiveTab }) {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
-                                {bookings.map((booking) => {
+                                {sortedBookings.map((booking) => {
                                     const event = booking.event;
                                     const dateObj = new Date(event.dateTime);
                                     const dateStr = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                                    const isCancelled = booking.status === "CANCELLED";
                                     
                                     return (
-                                        <ClayCard key={booking.id} className="border border-white/5 relative overflow-hidden group">
-                                            <div className="absolute top-0 left-0 w-1.5 h-full bg-energy-pink shadow-[2px_0_10px_rgba(255,0,127,0.3)]" />
+                                        <ClayCard key={booking.id} className={`border border-white/5 relative overflow-hidden group transition-opacity ${isCancelled ? 'opacity-50 grayscale-[0.5]' : ''}`}>
+                                            <div className={`absolute top-0 left-0 w-1.5 h-full ${isCancelled ? 'bg-text-secondary/30' : 'bg-energy-pink shadow-[2px_0_10px_rgba(255,0,127,0.3)]'}`} />
                                             <div className="pl-4">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <p className="text-[10px] text-text-secondary uppercase tracking-widest font-bold">{dateStr}</p>
-                                                    <span className="text-[10px] px-2 py-0.5 rounded-full border border-energy-pink/30 text-energy-pink bg-energy-pink/5">
-                                                        CONFIRMED
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${
+                                                        isCancelled 
+                                                            ? 'border-white/10 text-text-secondary bg-white/5' 
+                                                            : 'border-energy-pink/30 text-energy-pink bg-energy-pink/5'
+                                                    }`}>
+                                                        {booking.status || "CONFIRMED"}
                                                     </span>
                                                 </div>
-                                                <h3 className="text-xl font-bold font-display mb-4 group-hover:text-energy-pink transition-colors truncate">{event.title}</h3>
+                                                <h3 className={`text-xl font-bold font-display mb-4 transition-colors truncate ${isCancelled ? 'text-text-secondary' : 'group-hover:text-energy-pink'}`}>{event.title}</h3>
                                                 
                                                 <div className="space-y-2">
                                                     <div className="flex items-center gap-2 text-xs text-text-secondary">
-                                                        <MapPin size={14} className="text-energy-pink" />
+                                                        <MapPin size={14} className={isCancelled ? "text-text-secondary/50" : "text-energy-pink"} />
                                                         {event.venue.name}
                                                     </div>
                                                     <div className="flex items-center gap-2 text-xs text-text-secondary">
-                                                        <Ticket size={14} className="text-energy-pink" />
-                                                        1x Ticket
+                                                        <Ticket size={14} className={isCancelled ? "text-text-secondary/50" : "text-energy-pink"} />
+                                                        {booking.quantity || 1}x Ticket
                                                     </div>
                                                 </div>
                                             </div>

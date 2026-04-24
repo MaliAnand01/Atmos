@@ -25,8 +25,6 @@ public class VenueService {
     private final BookingRepository bookingRepository;
     private final WishlistRepository wishlistRepository;
 
-
-
     public Venue createVenue(Venue venue) {
         return venueRepository.save(Objects.requireNonNull(venue));
     }
@@ -45,29 +43,27 @@ public class VenueService {
         if (id == null) throw new RuntimeException("ID must not be null");
         Venue venue = venueRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Venue not found"));
-        
+
         if (updates.getName() != null) venue.setName(updates.getName());
         if (updates.getAddress() != null) venue.setAddress(updates.getAddress());
         if (updates.getCapacity() != null) venue.setCapacity(updates.getCapacity());
         if (updates.getImageUrl() != null) venue.setImageUrl(updates.getImageUrl());
-        
+
         return venueRepository.save(Objects.requireNonNull(venue));
     }
 
+    // Cascades deletion: clears bookings and wishlists for all venue events first
     @Transactional
     public void deleteVenue(Long id) {
         if (id == null) return;
-        
-        // 1. Find all events for this venue
+
+        // Clear dependent bookings and wishlists before deleting events (cascade handles the rest)
         List<Event> events = eventRepository.findByVenueId(id);
-        
-        // 2. Clear bookings and wishlists for each event
         for (Event event : events) {
             bookingRepository.deleteByEventId(event.getId());
             wishlistRepository.deleteByEventId(event.getId());
         }
-        
-        // 3. Delete the venue (Cascade will handle events)
+
         venueRepository.deleteById(id);
     }
 }

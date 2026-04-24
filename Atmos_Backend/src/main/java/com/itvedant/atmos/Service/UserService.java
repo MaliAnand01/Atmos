@@ -22,8 +22,6 @@ public class UserService {
     private final NotificationService notificationService;
     private final OTPService otpService;
 
-
-
     public com.itvedant.atmos.DTO.UserResponseDTO mapToResponse(User user) {
         com.itvedant.atmos.DTO.UserResponseDTO dto = new com.itvedant.atmos.DTO.UserResponseDTO();
         dto.setId(user.getId());
@@ -38,6 +36,7 @@ public class UserService {
         return dto;
     }
 
+    // Saves the user, encodes the password, and sends an OTP for email verification
     public User registerUser(User user) {
         if (user == null) {
             throw new RuntimeException("User data must not be null");
@@ -47,10 +46,7 @@ public class UserService {
             user.setRole("ROLE_USER");
         }
         User saved = userRepository.save(Objects.requireNonNull(user));
-        
-        // send otp
         otpService.generateAndSendOTP(saved);
-        
         return saved;
     }
 
@@ -84,7 +80,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-    // login
+    // Authenticates by email and bcrypt password match; returns null on failure
     public User login(String email, String password) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty())
@@ -105,6 +101,7 @@ public class UserService {
         return userRepository.findById(id);
     }
 
+    // Applies partial field updates; requires current password when changing password
     public User updateUser(Long id, User updates) {
         if (id == null) {
             throw new RuntimeException("User ID must not be null");
@@ -139,6 +136,7 @@ public class UserService {
         return userRepository.save(Objects.requireNonNull(existing));
     }
 
+    // Approves an organizer and sends them an in-app notification
     public User approveOrganizer(Long id) {
         if (id == null) throw new RuntimeException("ID must not be null");
         User user = userRepository.findById(Objects.requireNonNull(id))
@@ -148,23 +146,18 @@ public class UserService {
         }
         user.setOrganizerStatus("APPROVED");
         User saved = userRepository.save(user);
-        
-        // notify
-        notificationService.createNotification(user.getId(), 
-            "Your organizer application has been approved! You can now create events.", 
+        notificationService.createNotification(user.getId(),
+            "Your organizer application has been approved! You can now create events.",
             "APPROVAL");
-            
         return saved;
     }
 
+    // Deletes user along with their bookings and events before removing the account
     @org.springframework.transaction.annotation.Transactional
     public void deleteUser(Long id) {
         if (id == null) return;
-        
         bookingRepository.deleteByUserId(id);
-        
         eventRepository.deleteByOrganizerId(id);
-        
         userRepository.deleteById(Objects.requireNonNull(id));
     }
 }

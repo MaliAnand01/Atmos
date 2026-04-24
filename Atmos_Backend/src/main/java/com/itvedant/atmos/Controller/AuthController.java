@@ -20,14 +20,13 @@ public class AuthController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
-
-
-    // register
+    // Registers a new user and sends an email OTP for verification
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRequestDTO body) {
         try {
             String role = body.getRole() != null ? body.getRole() : "ROLE_USER";
 
+            // Prevent self-assignment of admin role via registration
             if ("ROLE_ADMIN".equalsIgnoreCase(role)) {
                 role = "ROLE_USER";
             }
@@ -45,7 +44,6 @@ public class AuthController {
             user.setOrganizationName(body.getOrganizationName());
             user.setPanGstin(body.getPanGstin());
 
-            // make org pending
             if ("ROLE_ORGANIZER".equalsIgnoreCase(role)) {
                 user.setOrganizerStatus("PENDING");
             }
@@ -63,7 +61,7 @@ public class AuthController {
         }
     }
 
-    // login
+    // Validates credentials and returns a JWT
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
         String email    = body.get("email");
@@ -83,7 +81,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    // verify otp
+    // Verifies the email OTP and marks account as verified
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
         try {
@@ -100,7 +98,7 @@ public class AuthController {
         }
     }
 
-    // resend otp
+    // Sends a fresh OTP to the user's email
     @PostMapping("/resend-otp")
     public ResponseEntity<?> resendOtp(@RequestBody Map<String, String> body) {
         try {
@@ -112,7 +110,7 @@ public class AuthController {
         }
     }
 
-    // forgot password
+    // Sends a password-reset OTP to the given email
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
         try {
@@ -123,7 +121,7 @@ public class AuthController {
         }
     }
 
-    // reset password
+    // Resets the password after OTP verification
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
         try {

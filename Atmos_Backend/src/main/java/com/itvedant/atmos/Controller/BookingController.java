@@ -19,21 +19,18 @@ public class BookingController {
 
     private final BookingService bookingService;
 
-
-
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getUserBookings(@PathVariable Long userId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getPrincipal() == null) {
             return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
         }
-        Long loggedInUserId = (Long) auth.getPrincipal();
-        
-        // check if user is admin or owner
+        Long loggedInUserId = ((Number) auth.getPrincipal()).longValue();
+
         if (!loggedInUserId.equals(userId) && !auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
             return ResponseEntity.status(403).body(Map.of("error", "Access denied. You can only view your own bookings."));
         }
-        
+
         return ResponseEntity.ok(bookingService.getUserBookings(userId));
     }
 
@@ -43,9 +40,8 @@ public class BookingController {
         if (auth == null || auth.getPrincipal() == null) {
             return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
         }
-        Long loggedInUserId = (Long) auth.getPrincipal();
-        
-        // check if user is admin or owner
+        Long loggedInUserId = ((Number) auth.getPrincipal()).longValue();
+
         if (!loggedInUserId.equals(organizerId) && !auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
             return ResponseEntity.status(403).body(Map.of("error", "Access denied. You can only view bookings for your events."));
         }

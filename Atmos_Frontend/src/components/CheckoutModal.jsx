@@ -83,7 +83,7 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
           email: user.email || "",
         },
         theme: {
-          color: "#00F0FF",
+          color: "#020f1aff",
         },
         modal: {
           ondismiss: () => {
@@ -109,9 +109,18 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
     setStep(1);
     setQuantity(1);
     setErrorMsg("");
-    navigate("/tickets")
+    navigate(`/event/${eventId}`)
     onClose();
   };
+
+  const goToDashboard = () => {
+    setStep(1);
+    setQuantity(1);
+    setErrorMsg("");
+    navigate(`/dashboard`)
+    onClose();
+  };
+  
 
   return (
     <AnimatePresence>
@@ -202,7 +211,7 @@ export default function CheckoutModal({ isOpen, onClose, eventName, eventId, pri
                             <h2 className="text-3xl font-display font-bold text-white mb-2 uppercase tracking-tight">Booking Confirmed</h2>
                             <p className="text-text-secondary text-sm px-4">Your ticket for <span className="text-white font-medium">{eventName}</span> is ready. View it in your dashboard.</p>
                         </div>
-                        <ClayButton className="w-full mt-4 bg-void text-white border border-white/10 hover:bg-white/5 py-4 rounded-xl font-bold" variant="secondary" onClick={handleClose}>
+                        <ClayButton className="w-full mt-4 bg-void text-white border border-white/10 hover:bg-white/5 py-4 rounded-xl font-bold" variant="secondary" onClick={goToDashboard}>
                             Go to Dashboard
                         </ClayButton>
                     </motion.div>

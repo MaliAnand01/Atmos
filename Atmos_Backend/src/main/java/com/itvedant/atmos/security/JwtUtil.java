@@ -17,7 +17,6 @@ public class JwtUtil {
     private static final String SECRET_STRING = "ThisIsASecureSecretKeyForAtmosProjectNeedsToBeAtLeast32BytesLong!";
     private final SecretKey secretKey = Keys.hmacShaKeyFor(SECRET_STRING.getBytes());
 
-    // Token validity (e.g., 24 hours)
     public static final long JWT_TOKEN_VALIDITY = 24 * 60 * 60 * 1000;
 
     public String extractUsername(String token) {
@@ -28,10 +27,15 @@ public class JwtUtil {
         Claims claims = extractAllClaims(token);
         return claims.get("role", String.class);
     }
-    
+
     public Long extractUserId(String token) {
         Claims claims = extractAllClaims(token);
-        return claims.get("userId", Long.class);
+        // jjwt deserializes numbers as Integer by default; cast via Number to avoid ClassCastException
+        Object raw = claims.get("userId");
+        if (raw instanceof Number) {
+            return ((Number) raw).longValue();
+        }
+        return null;
     }
 
     public Date extractExpiration(String token) {

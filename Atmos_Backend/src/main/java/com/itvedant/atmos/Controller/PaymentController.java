@@ -4,6 +4,7 @@ import com.itvedant.atmos.Entity.Booking;
 import com.itvedant.atmos.Repo.BookingRepository;
 import com.itvedant.atmos.Service.NotificationService;
 import com.itvedant.atmos.Service.RazorpayService;
+import com.itvedant.atmos.Service.EmailService;
 import com.razorpay.Order;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,10 +27,9 @@ public class PaymentController {
     private final BookingRepository bookingRepository;
     private final NotificationService notificationService;
     private final RazorpayService razorpayService;
+    private final EmailService emailService;
 
-
-
-    // 1. Create Razorpay Order
+    // Creates a Razorpay order for the given booking and returns payment details to the frontend
     @PostMapping("/create-order/{bookingId}")
     public ResponseEntity<?> createOrder(@PathVariable Long bookingId) {
         if (bookingId == null) {
@@ -39,13 +39,12 @@ public class PaymentController {
             Booking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-            // Create Order
             double amount = booking.getEvent().getPrice() * booking.getQuantity();
             String currency = "INR";
             String receipt = "receipt_booking_" + bookingId;
 
             Order order = razorpayService.createOrder(amount, currency, receipt);
-            
+
             booking.setRazorpayOrderId(order.get("id").toString());
             bookingRepository.save(booking);
 
@@ -60,6 +59,7 @@ public class PaymentController {
         }
     }
 
+    // Verifies the Razorpay signature and marks the booking as ACTIVE on success
     @PostMapping("/verify-payment")
     public ResponseEntity<?> verifyPayment(@RequestBody Map<String, String> data) {
         String orderId = data.get("razorpay_order_id");
@@ -78,15 +78,15 @@ public class PaymentController {
             booking.setBookingHash(UUID.randomUUID().toString());
             bookingRepository.save(booking);
 
-            // Notify user
-            notificationService.createNotification(booking.getUser().getId(), 
-                "Payment Successful! Your ticket to " + booking.getEvent().getTitle() + " is confirmed.", 
+            notificationService.createNotification(booking.getUser().getId(),
+                "Payment Successful! Your ticket to " + booking.getEvent().getTitle() + " is confirmed.",
                 "BOOKING");
 
-            // Notify org
             notificationService.createNotification(booking.getEvent().getOrganizerId(),
                 "New Booking! " + booking.getUser().getUsername() + " booked a ticket for " + booking.getEvent().getTitle(),
                 "ORGANIZER_NOTIFICATION");
+
+            emailService.sendBookingConfirmationEmail(booking.getUser().getEmail(), booking);
 
             return ResponseEntity.ok(Map.of("status", "success", "message", "Payment verified."));
         } else {

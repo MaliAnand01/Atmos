@@ -12,8 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,24 +22,18 @@ public class EventService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
 
-
-
+    // Returns all active (non-expired) events
     public List<Event> getAllEvents() {
         return eventRepository.findAllByActiveTrue();
     }
 
-    // paginated
-    public Page<Event> getAllEventsPaged(Pageable pageable) {
-        return eventRepository.findAllByActiveTrue(Objects.requireNonNull(pageable));
-    }
-
-    // search
+    // Full-text search across event titles and venue names
     public List<Event> searchEvents(String query) {
         if (query == null || query.isBlank()) return getAllEvents();
         return eventRepository.searchByTitleOrVenue(query.trim());
     }
 
-    // filter cat
+    // Returns active events matching the given category; "All" or blank returns everything
     public List<Event> getEventsByCategory(String category) {
         if (category == null || category.isBlank() || category.equalsIgnoreCase("All"))
             return getAllEvents();
@@ -65,7 +57,7 @@ public class EventService {
         return eventRepository.findByVenueId(venueId);
     }
 
-    // filter vibe
+    // Returns active events within ±2 energy levels of the given vibe level
     public List<Event> getEventsByVibe(int vibeLevel) {
         return eventRepository.findByEnergyLevelBetween(
                 Math.max(1, vibeLevel - 2),
@@ -73,11 +65,12 @@ public class EventService {
         ).stream().filter(Event::getActive).toList();
     }
 
+    // Creates an event; enforces organizer approval before allowing publication
     public Event createEvent(Event event, Long loggedInUserId) {
         if (event == null) {
             throw new RuntimeException("Event data must not be null");
         }
-        
+
         User executingUser = userRepository.findById(java.util.Objects.requireNonNull(loggedInUserId))
             .orElseThrow(() -> new RuntimeException("User not found in context"));
 
@@ -85,13 +78,14 @@ public class EventService {
             if (!"APPROVED".equalsIgnoreCase(executingUser.getOrganizerStatus())) {
                 throw new RuntimeException("Your account is pending verification. Event creation is restricted.");
             }
-            // Overwrite organizer ID for safety
+            // Force organizer ID from the authenticated user, not the request body
             event.setOrganizerId(loggedInUserId);
         }
-        
+
         return eventRepository.save(Objects.requireNonNull(event));
     }
 
+    // Books tickets atomically; decrements capacity and creates a PENDING_PAYMENT booking
     @Transactional
     public Booking bookEvent(Long userId, Long eventId, Integer quantity) {
         if (userId == null || eventId == null) {
@@ -121,11 +115,12 @@ public class EventService {
         return bookingRepository.save(Objects.requireNonNull(booking));
     }
 
+    // Applies partial updates; only non-null fields from the request are written
     public Event updateEvent(Long id, Event updates) {
         if (id == null) throw new RuntimeException("ID must not be null");
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
-        
+
         if (updates.getTitle() != null) event.setTitle(updates.getTitle());
         if (updates.getDescription() != null) event.setDescription(updates.getDescription());
         if (updates.getEnergyLevel() != null) event.setEnergyLevel(updates.getEnergyLevel());
@@ -144,13 +139,11 @@ public class EventService {
         if (updates.getDressCode() != null) event.setDressCode(updates.getDressCode());
         if (updates.getDoorPolicy() != null) event.setDoorPolicy(updates.getDoorPolicy());
         if (updates.getActive() != null) event.setActive(updates.getActive());
-        
-        // performer
         if (updates.getPerformerName() != null) event.setPerformerName(updates.getPerformerName());
         if (updates.getPerformerImage() != null) event.setPerformerImage(updates.getPerformerImage());
         if (updates.getPerformerBio() != null) event.setPerformerBio(updates.getPerformerBio());
         if (updates.getTourName() != null) event.setTourName(updates.getTourName());
-        
+
         return eventRepository.save(Objects.requireNonNull(event));
     }
 

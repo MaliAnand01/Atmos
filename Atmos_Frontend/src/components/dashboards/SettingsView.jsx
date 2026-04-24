@@ -59,7 +59,7 @@ export default function SettingsView() {
             
             await api.put(`/users/${user.id}`, updates);
             
-            // Update local storage
+            // Sync updated username/email to localStorage
             const updatedUser = { ...user, username: data.username, email: data.email };
             localStorage.setItem('atmos_user', JSON.stringify(updatedUser));
             

@@ -82,14 +82,6 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, tab
                         <h1 className="text-3xl md:text-4xl font-display font-bold drop-shadow-lg">Good morning, {user?.username}</h1>
                         <p className="text-text-secondary text-sm mt-1">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
                     </div>
-                    <div className="flex gap-3 hidden sm:flex">
-                        <ClayButton variant="secondary" className="px-4 py-2 text-xs rounded-xl flex items-center gap-2 bg-clay-surface">
-                            <BarChart3 size={14} /> Download
-                        </ClayButton>
-                        <ClayButton variant="accent" className="px-4 py-2 text-xs rounded-xl flex items-center gap-2 shadow-[0_0_20px_rgba(0,240,255,0.4)]">
-                            + Invite
-                        </ClayButton>
-                    </div>
                 </div>
 
                 {/* Mobile Tab Switcher */}

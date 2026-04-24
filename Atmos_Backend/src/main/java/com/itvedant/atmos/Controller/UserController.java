@@ -22,9 +22,7 @@ public class UserController {
 
     private final UserService userService;
 
-
-
-    // get all users
+    // Returns all users; restricted to admins only
     @GetMapping
     public ResponseEntity<?> getAllUsers() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -38,7 +36,7 @@ public class UserController {
         );
     }
 
-    // get profile
+    // Returns a single user by ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)
@@ -46,23 +44,24 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // update
+    // Updates user fields; non-admins can only edit their own profile
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(
             @PathVariable Long id,
             @RequestBody User updates) {
-        
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getPrincipal() == null) {
             return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
         }
-        Long loggedInUserId = (Long) auth.getPrincipal();
+        Long loggedInUserId = ((Number) auth.getPrincipal()).longValue();
         boolean isAdmin = auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        
+
         if (!loggedInUserId.equals(id) && !isAdmin) {
             return ResponseEntity.status(403).body(Map.of("error", "Forbidden: You can only update your own profile."));
         }
 
+        // Prevent non-admins from escalating privileges
         if (!isAdmin) {
             updates.setOrganizerStatus(null);
             updates.setRole(null);
@@ -77,16 +76,16 @@ public class UserController {
         }
     }
 
-    // delete
+    // Deletes a user account; only the owner or an admin can do this
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getPrincipal() == null) {
             return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
         }
-        Long loggedInUserId = (Long) auth.getPrincipal();
+        Long loggedInUserId = ((Number) auth.getPrincipal()).longValue();
         boolean isAdmin = auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        
+
         if (!loggedInUserId.equals(id) && !isAdmin) {
             return ResponseEntity.status(403).body(Map.of("error", "Forbidden: You do not have permission to delete this account."));
         }

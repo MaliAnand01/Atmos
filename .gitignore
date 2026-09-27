@@ -29,3 +29,6 @@ Atmos_Backend/uploads/
 *.txt
 .env
 run-backend.ps1
+*.backup
+*.properties.backup
+**/application-local.properties

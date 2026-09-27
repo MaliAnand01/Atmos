@@ -62,7 +62,7 @@ public class EventService {
         return eventRepository.findByEnergyLevelBetween(
                 Math.max(1, vibeLevel - 2),
                 Math.min(10, vibeLevel + 2)
-        ).stream().filter(Event::getActive).toList();
+        ).stream().filter(e -> Boolean.TRUE.equals(e.getActive())).toList();
     }
 
     // Creates an event; enforces organizer approval before allowing publication

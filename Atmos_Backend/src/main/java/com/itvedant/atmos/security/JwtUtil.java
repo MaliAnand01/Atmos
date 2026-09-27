@@ -20,7 +20,7 @@ public class JwtUtil {
     public static final long JWT_TOKEN_VALIDITY = 24 * 60 * 60 * 1000;
 
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+        return extractClaim(token, claims -> claims.getSubject());
     }
 
     public String extractRole(String token) {
@@ -39,7 +39,7 @@ public class JwtUtil {
     }
 
     public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+        return extractClaim(token, claims -> claims.getExpiration());
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

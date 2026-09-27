@@ -104,7 +104,7 @@ public class DataLoader {
             // Seed Events
             if (true) {
                 List<Venue> venues = venueRepository.findAll();
-                Long orgId = userRepository.findByEmail("organizer@atmos.com").map(User::getId).orElse(1L);
+                Long orgId = userRepository.findByEmail("organizer@atmos.com").map(u -> u.getId()).orElse(1L);
 
                 Event e1 = createEvent("Midnight Techno", "High BPM till 4 AM", "Neon Dreams & Dark Bass", "21+",
                         "All Black / Clubwear", "Strict Entry / Valid ID", 10, 5, 800, venues.get(0), orgId, 799.0,

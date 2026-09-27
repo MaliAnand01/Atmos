@@ -47,7 +47,7 @@ public class WishlistService {
 
     public List<Event> getUserWishlist(Long userId) {
         return wishlistRepository.findByUserId(userId).stream()
-                .map(Wishlist::getEvent)
+                .map(w -> w.getEvent())
                 .collect(Collectors.toList());
     }
 }

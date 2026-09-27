@@ -3,14 +3,18 @@ package com.itvedant.atmos.Entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -37,10 +41,15 @@ public class User {
     private String organizationName;
     private String panGstin;
 
+    @Builder.Default
     @Column(nullable = false)
-    private String organizerStatus = "APPROVED"; // Default to APPROVED for ROLE_USER/ROLE_ADMIN
+    private String organizerStatus = "APPROVED"; 
 
     private String otp;
     private LocalDateTime otpExpiry;
+    @Builder.Default
     private Boolean verified = false;
+
+    @Transient
+    private String currentPassword;
 }

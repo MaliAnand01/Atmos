@@ -3,6 +3,8 @@ import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import { Calendar, MapPin, Ticket, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
+import { api } from "../services/api";
+import toast from "react-hot-toast";
 
 export default function DigitalTicket({ booking, index = 0 }) {
   const event = booking.event;
@@ -33,6 +35,17 @@ export default function DigitalTicket({ booking, index = 0 }) {
   const dateStr = dateObj.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
   const timeStr = dateObj.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
   const qrData = booking.bookingHash || `atmos-booking-${booking.id}`;
+
+  const handleCancel = async () => {
+    if (!window.confirm("Are you sure you want to cancel this booking? Refunds may take 5-7 business days.")) return;
+    try {
+      await api.put(`/bookings/${booking.id}/cancel`);
+      toast.success("Booking cancelled successfully!");
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (e) {
+      toast.error(e.message || "Failed to cancel booking.");
+    }
+  };
 
   return (
     <motion.div
@@ -72,7 +85,7 @@ export default function DigitalTicket({ booking, index = 0 }) {
             {/* Top row: title + badge */}
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold tracking-widest uppercase text-[#7b8cde] mb-1">General Admission</p>
+                <p className="text-[10px] font-bold tracking-widest uppercase text-[#7b8cde] mb-1">General Admission x{booking.quantity || 1}</p>
                 <h3 className="text-xl md:text-2xl font-display font-bold text-white leading-tight">{event.title}</h3>
               </div>
               <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#e96479] bg-[#e96479]/10 border border-[#e96479]/20 rounded-full px-2.5 py-1 shrink-0 mt-0.5">
@@ -101,12 +114,10 @@ export default function DigitalTicket({ booking, index = 0 }) {
                 <Ticket size={11} />
                 #{booking.id}
               </span>
-              <Link
-                to={`/event/${event.id}`}
-                className="text-xs font-semibold text-[#7b8cde] hover:text-white transition-colors"
-              >
-                View Event →
-              </Link>
+              <div className="flex gap-4 items-center">
+                 <button onClick={handleCancel} className="text-xs font-semibold text-energy-pink hover:text-white transition-colors">Cancel</button>
+                 <Link to={`/event/${event.id}`} className="text-xs font-semibold text-[#7b8cde] hover:text-white transition-colors">View Event →</Link>
+              </div>
             </div>
           </div>
         </div>

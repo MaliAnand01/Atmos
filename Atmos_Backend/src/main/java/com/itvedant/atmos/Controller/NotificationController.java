@@ -8,14 +8,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
+
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/notifications")
 public class NotificationController {
     private final NotificationService notificationService;
 
-    public NotificationController(NotificationService notificationService) {
-        this.notificationService = notificationService;
-    }
+
 
     @GetMapping("/{userId}")
     public ResponseEntity<List<Notification>> getNotifications(@PathVariable Long userId) {

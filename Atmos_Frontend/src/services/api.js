@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
-// Create a centralized axios instance
+// Base axios instance with JSON content-type header
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -10,7 +10,7 @@ const axiosInstance = axios.create({
   }
 });
 
-// Add auth token to requests
+// Attach JWT token to every outgoing request
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem('atmos_token');
   
@@ -18,13 +18,12 @@ axiosInstance.interceptors.request.use((config) => {
     config.headers['Authorization'] = `Bearer ${token}`;
   }
 
-
   return config;
 }, (error) => {
   return Promise.reject(error);
 });
 
-// Global error handler
+// Unwrap response.data and normalize error messages globally
 axiosInstance.interceptors.response.use(
   (response) => response.data,
   (error) => {
@@ -49,10 +48,9 @@ class ApiService {
   async delete(endpoint) {
     return axiosInstance.delete(endpoint);
   }
-
 }
 
-// Function to format external image links
+// Returns a fallback image URL for missing or non-http image links
 export const getImageUrl = (url) => {
   if (!url || !url.startsWith('http')) return "https://images.unsplash.com/photo-1470221339082-e088f2067c7b?w=800&q=80";
   return url;

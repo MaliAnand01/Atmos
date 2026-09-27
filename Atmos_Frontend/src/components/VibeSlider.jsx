@@ -3,9 +3,6 @@ import gsap from "gsap";
 import { Draggable } from "gsap/all";
 import { motion, AnimatePresence } from "framer-motion";
 import { MousePointer2 } from "lucide-react";
-import useSound from "use-sound";
-
-const TICK_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3";
 
 gsap.registerPlugin(Draggable);
 
@@ -16,12 +13,6 @@ const VibeSlider = memo(({ onVibeChange, initialLevel = 5, showHint = false }) =
   // Local state for immediate UI feedback without re-rendering parent
   const [localLevel, setLocalLevel] = useState(initialLevel);
   const localLevelRef = useRef(initialLevel);
-  const [playTick] = useSound(TICK_SOUND_URL, { volume: 0.5 });
-  const playTickRef = useRef(playTick);
-  
-  useEffect(() => {
-    playTickRef.current = playTick;
-  }, [playTick]);
 
   useEffect(() => {
     let debounceTimer;
@@ -48,7 +39,6 @@ const VibeSlider = memo(({ onVibeChange, initialLevel = 5, showHint = false }) =
         if (rawLevel !== localLevelRef.current) {
           localLevelRef.current = rawLevel;
           setLocalLevel(rawLevel);
-          if (playTickRef.current) playTickRef.current(); // Tactile sound feedback
           
           // Debounce the heavy parent state update / API fetch
           clearTimeout(debounceTimer);
@@ -66,7 +56,7 @@ const VibeSlider = memo(({ onVibeChange, initialLevel = 5, showHint = false }) =
       clearTimeout(debounceTimer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onVibeChange]); // initialLevel intentionally omitted to avoid reset on parent sync
+  }, [onVibeChange]); 
 
   const getText = () => {
     if(localLevel <= 3) return "Chill / Relaxed";

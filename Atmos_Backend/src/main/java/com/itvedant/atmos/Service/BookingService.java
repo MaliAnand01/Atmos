@@ -10,16 +10,16 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final EventRepository eventRepository;
-
-    public BookingService(BookingRepository bookingRepository, EventRepository eventRepository) {
-        this.bookingRepository = bookingRepository;
-        this.eventRepository = eventRepository;
-    }
+    private final NotificationService notificationService;
+    private final EmailService emailService;
 
     public List<Booking> getUserBookings(Long userId) {
         if (userId == null)
@@ -33,7 +33,7 @@ public class BookingService {
         return bookingRepository.findByEventOrganizerId(organizerId);
     }
 
-    /** Cancel a booking and restore event capacity */
+    // Cancels a booking, restores event capacity, and notifies the user
     @Transactional
     public void cancelBooking(Long bookingId) {
         if (bookingId == null)
@@ -49,7 +49,13 @@ public class BookingService {
         bookingRepository.save(Objects.requireNonNull(booking));
 
         Event event = booking.getEvent();
-        event.setAvailableCapacity(event.getAvailableCapacity() + 1);
+        event.setAvailableCapacity(event.getAvailableCapacity() + booking.getQuantity());
         eventRepository.save(event);
+
+        notificationService.createNotification(booking.getUser().getId(),
+            "Your booking for " + event.getTitle() + " has been cancelled. Any applicable refunds have been initiated.",
+            "CANCELLATION");
+
+        emailService.sendCancellationEmail(booking.getUser().getEmail(), booking);
     }
 }

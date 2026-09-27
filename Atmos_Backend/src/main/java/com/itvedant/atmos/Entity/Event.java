@@ -4,14 +4,18 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "events")
-@Data
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Event {
@@ -48,6 +52,7 @@ public class Event {
     @Column(name = "organizer_id")
     private Long organizerId;
 
+    @Builder.Default
     @Column(nullable = false)
     private Double price = 0.0; // Ticket price in INR
 
@@ -66,6 +71,7 @@ public class Event {
     @Column(name = "door_policy", columnDefinition = "TEXT")
     private String doorPolicy;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean active = true;
 

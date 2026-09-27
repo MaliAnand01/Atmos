@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { X, UserCircle, BadgeCheck, Eye, EyeOff, Building, Phone, IdCard, User, Contact2 } from "lucide-react";
+import { X, UserCircle, BadgeCheck, Eye, EyeOff, Building, Phone, IdCard, User, Contact2, Lock } from "lucide-react";
 import ClayButton from "./ClayButton";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
@@ -19,9 +19,11 @@ const loginSchema = z.object({
 });
 
 const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  username: z.string().min(3, "Username must be at least 3 characters").regex(/^[A-Za-z\s]+$/, "Only alphabets allowed"),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters")
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]/, "Must include uppercase, lowercase, number, and special character"),
+  confirmPassword: z.string(),
   role: z.enum(["ROLE_USER", "ROLE_ORGANIZER"]),
   // for organizers
   organizationName: z.string().optional(),
@@ -29,6 +31,13 @@ const registerSchema = z.object({
   panOrGstin: z.string().optional(),
   website: z.string().url("Invalid website URL").optional().or(z.literal("")),
 }).superRefine((data, ctx) => {
+  if (data.password !== data.confirmPassword) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Passwords don't match",
+      path: ["confirmPassword"],
+    });
+  }
   if (data.role === "ROLE_ORGANIZER") {
     if (!data.organizationName || data.organizationName.trim().length === 0) {
       ctx.addIssue({
@@ -131,7 +140,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
           ...(isOrganizer && {
             organizationName: data.organizationName,
             phone: data.phone.replace(/\s/g, ""),
-            panOrGstin: data.panOrGstin,
+            panGstin: data.panOrGstin,
             website: data.website || null,
           }),
         };
@@ -197,12 +206,61 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
   const onResendOtp = async () => {
     setLoading(true);
     try {
-      await api.post("/auth/resend-otp", { userId: tempUser.id });
+      if (mode === "reset-password") {
+         await api.post("/auth/forgot-password", { email: tempUser.email });
+      } else {
+         await api.post("/auth/resend-otp", { userId: tempUser.id });
+      }
       toast.success("New OTP sent!");
     } catch (err) {
       toast.error(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onForgotPassword = async (e) => {
+    e.preventDefault();
+    const emailVal = watch("email");
+    if (!emailVal) {
+        setApiError("Please enter your email address to reset password");
+        return;
+    }
+    setLoading(true);
+    try {
+        await api.post("/auth/forgot-password", { email: emailVal });
+        setTempUser({ email: emailVal });
+        setMode("reset-password");
+        setOtpValue("");
+        toast.success("Password reset code sent to your email.");
+    } catch(err) {
+        setApiError(err.message || "Account not found");
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const onResetPassword = async (e) => {
+    e.preventDefault();
+    if (otpValue.length !== 6) return toast.error("Please enter 6-digit OTP");
+    const newPass = watch("password");
+    if (!newPass || newPass.length < 6) return setApiError("New password must be at least 6 characters");
+    
+    setLoading(true);
+    try {
+        await api.post("/auth/reset-password", { 
+            email: tempUser.email, 
+            otp: otpValue,
+            newPassword: newPass
+        });
+        toast.success("Password reset successfully! You can now log in.");
+        setMode("login");
+        reset();
+        setOtpValue("");
+    } catch(err) {
+       setApiError(err.message || "Failed to reset password");
+    } finally {
+       setLoading(false);
     }
   };
 
@@ -275,6 +333,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                           {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                         {errors.password && <p className="text-energy-pink text-xs mt-1 ml-1">{errors.password.message}</p>}
+                      </div>
+
+                      <div className="flex justify-between items-center mt-2 px-1">
+                        <button type="button" onClick={() => { setMode("forgot-password"); setApiError(""); }} className="text-[11px] text-text-secondary hover:text-white transition-colors">Forgot Password?</button>
                       </div>
 
                       <ClayButton disabled={loading} type="submit" className="w-full text-void bg-white hover:bg-white/90 disabled:opacity-50 mt-2" variant="primary">
@@ -350,6 +412,16 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                           </button>
                           {errors.password && <p className="text-energy-pink text-xs mt-1 ml-1">{errors.password.message}</p>}
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            {...register("confirmPassword")}
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Confirm Password"
+                            className={inputClass}
+                          />
+                          {errors.confirmPassword && <p className="text-energy-pink text-xs mt-1 ml-1">{errors.confirmPassword.message}</p>}
                         </div>
                       </div>
 
@@ -441,7 +513,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                       <button onClick={() => { setMode("login"); setApiError(""); }} className="text-energy-pink hover:underline font-medium">Login</button>
                     </p>
                   </motion.div>
-                ) : (
+                ) : mode === "otp" ? (
                   /* otp screen */
                   <motion.div key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col gap-6">
                     <div className="text-center">
@@ -475,6 +547,73 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                         <button onClick={onResendOtp} disabled={loading} className="text-chill-blue hover:underline font-medium disabled:opacity-50">Resend Code</button>
                       </p>
                       <button onClick={() => { setMode("register"); setTempUser(null); }} className="text-text-secondary text-xs hover:text-white transition-colors">Change Email / Back</button>
+                    </div>
+                  </motion.div>
+                ) : mode === "forgot-password" ? (
+                  /* forgot password */
+                  <motion.div key="forgot" custom={direction} variants={variants} initial="initial" animate="animate" exit="exit" className="flex flex-col gap-6">
+                    <div>
+                      <h2 className="text-3xl font-display font-bold">Reset Password</h2>
+                      <p className="text-text-secondary mt-1 tracking-wide">Enter your email and we'll send you an OTP to quickly jump back in.</p>
+                    </div>
+                    <form onSubmit={onForgotPassword} className="flex flex-col gap-4">
+                      {apiError && <p className="text-energy-pink text-sm text-center bg-energy-pink/10 py-2 rounded-lg">{apiError}</p>}
+                      <div>
+                        <input {...register("email")} type="email" placeholder="Email Address" className={inputClass} />
+                      </div>
+                      <ClayButton disabled={loading} type="submit" className="w-full text-void bg-white hover:bg-white/90 disabled:opacity-50 mt-2" variant="primary">
+                        {loading ? "Sending..." : "Send Reset Code"}
+                      </ClayButton>
+                    </form>
+                    <button onClick={() => setMode("login")} className="text-text-secondary text-xs hover:text-white transition-colors mt-2 text-center">Back to Login</button>
+                  </motion.div>
+                ) : (
+                  /* reset password */
+                  <motion.div key="reset-password" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col gap-6">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-chill-blue/10 rounded-full flex items-center justify-center mx-auto mb-4 text-chill-blue border border-chill-blue/20">
+                        <Lock size={32} />
+                      </div>
+                      <h2 className="text-3xl font-display font-bold">New Password</h2>
+                      <p className="text-text-secondary mt-1 text-sm">Enter the code sent to <span className="text-white font-medium">{tempUser?.email}</span></p>
+                    </div>
+
+                    <form onSubmit={onResetPassword} className="flex flex-col gap-6">
+                       {apiError && <p className="text-energy-pink text-sm text-center bg-energy-pink/10 py-2 rounded-lg">{apiError}</p>}
+                       <div className="flex flex-col gap-2">
+                          <input 
+                            value={otpValue}
+                            onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            type="text"
+                            placeholder="000000"
+                            className="bg-void text-center text-3xl font-bold tracking-[0.5em] text-chill-blue px-4 py-6 rounded-2xl border border-white/5 focus:border-chill-blue outline-none transition-all placeholder:text-white/5"
+                          />
+                          <p className="text-[10px] text-center text-text-secondary uppercase tracking-[0.2em]">6-Digit Security Code</p>
+                       </div>
+
+                       <div className="relative mt-2">
+                          <input
+                            {...register("password")}
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Create New Password"
+                            className={inputClass}
+                          />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-[14px] text-text-secondary hover:text-white transition-colors">
+                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                          </button>
+                        </div>
+
+                       <ClayButton disabled={loading || otpValue.length !== 6} type="submit" className="w-full bg-chill-blue text-void font-bold py-4" variant="primary">
+                         {loading ? "Re-securing Account..." : "Reset Password"}
+                       </ClayButton>
+                    </form>
+
+                    <div className="text-center space-y-4">
+                      <p className="text-text-secondary text-sm">
+                        Didn't receive the email?{" "}
+                        <button onClick={onResendOtp} disabled={loading} className="text-chill-blue hover:underline font-medium disabled:opacity-50">Resend Code</button>
+                      </p>
+                      <button onClick={() => { setMode("forgot-password"); setTempUser(null); }} className="text-text-secondary text-xs hover:text-white transition-colors">Change Email / Back</button>
                     </div>
                   </motion.div>
                 )}

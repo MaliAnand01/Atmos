@@ -10,24 +10,23 @@ import java.util.Map;
 
 import com.itvedant.atmos.security.JwtUtil;
 
+import lombok.RequiredArgsConstructor;
+
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
-    public AuthController(UserService userService, JwtUtil jwtUtil) {
-        this.userService = userService;
-        this.jwtUtil = jwtUtil;
-    }
-
-    // register
+    // Registers a new user and sends an email OTP for verification
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRequestDTO body) {
         try {
             String role = body.getRole() != null ? body.getRole() : "ROLE_USER";
 
+            // Prevent self-assignment of admin role via registration
             if ("ROLE_ADMIN".equalsIgnoreCase(role)) {
                 role = "ROLE_USER";
             }
@@ -45,7 +44,6 @@ public class AuthController {
             user.setOrganizationName(body.getOrganizationName());
             user.setPanGstin(body.getPanGstin());
 
-            // make org pending
             if ("ROLE_ORGANIZER".equalsIgnoreCase(role)) {
                 user.setOrganizerStatus("PENDING");
             }
@@ -63,7 +61,7 @@ public class AuthController {
         }
     }
 
-    // login
+    // Validates credentials and returns a JWT
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
         String email    = body.get("email");
@@ -83,7 +81,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    // verify otp
+    // Verifies the email OTP and marks account as verified
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
         try {
@@ -100,13 +98,35 @@ public class AuthController {
         }
     }
 
-    // resend otp
+    // Sends a fresh OTP to the user's email
     @PostMapping("/resend-otp")
     public ResponseEntity<?> resendOtp(@RequestBody Map<String, String> body) {
         try {
             Long userId = Long.parseLong(body.get("userId"));
             userService.resendOtp(userId);
             return ResponseEntity.ok(Map.of("message", "New OTP sent to your email."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Sends a password-reset OTP to the given email
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
+        try {
+            userService.sendPasswordResetOtp(body.get("email"));
+            return ResponseEntity.ok(Map.of("message", "Password reset OTP sent to email."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Resets the password after OTP verification
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+        try {
+            userService.resetPassword(body.get("email"), body.get("otp"), body.get("newPassword"));
+            return ResponseEntity.ok(Map.of("message", "Password reset successfully."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

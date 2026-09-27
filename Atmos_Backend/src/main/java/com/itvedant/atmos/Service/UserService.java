@@ -9,7 +9,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
@@ -18,19 +21,6 @@ public class UserService {
     private final com.itvedant.atmos.Repo.EventRepository eventRepository;
     private final NotificationService notificationService;
     private final OTPService otpService;
-
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, 
-                       com.itvedant.atmos.Repo.BookingRepository bookingRepository,
-                       com.itvedant.atmos.Repo.EventRepository eventRepository,
-                       NotificationService notificationService,
-                       OTPService otpService) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.bookingRepository = bookingRepository;
-        this.eventRepository = eventRepository;
-        this.notificationService = notificationService;
-        this.otpService = otpService;
-    }
 
     public com.itvedant.atmos.DTO.UserResponseDTO mapToResponse(User user) {
         com.itvedant.atmos.DTO.UserResponseDTO dto = new com.itvedant.atmos.DTO.UserResponseDTO();
@@ -46,6 +36,7 @@ public class UserService {
         return dto;
     }
 
+    // Saves the user, encodes the password, and sends an OTP for email verification
     public User registerUser(User user) {
         if (user == null) {
             throw new RuntimeException("User data must not be null");
@@ -55,10 +46,7 @@ public class UserService {
             user.setRole("ROLE_USER");
         }
         User saved = userRepository.save(Objects.requireNonNull(user));
-        
-        // send otp
         otpService.generateAndSendOTP(saved);
-        
         return saved;
     }
 
@@ -76,7 +64,23 @@ public class UserService {
         otpService.generateAndSendOTP(user);
     }
 
-    // login
+    public void sendPasswordResetOtp(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email not found."));
+        otpService.generateAndSendOTP(user);
+    }
+
+    public void resetPassword(String email, String otp, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email not found."));
+        if (!otpService.verifyOTP(user, otp)) {
+            throw new RuntimeException("Invalid or expired OTP.");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    // Authenticates by email and bcrypt password match; returns null on failure
     public User login(String email, String password) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty())
@@ -97,6 +101,7 @@ public class UserService {
         return userRepository.findById(id);
     }
 
+    // Applies partial field updates; requires current password when changing password
     public User updateUser(Long id, User updates) {
         if (id == null) {
             throw new RuntimeException("User ID must not be null");
@@ -111,6 +116,9 @@ public class UserService {
             existing.setEmail(updates.getEmail());
         }
         if (updates.getPassword() != null && !updates.getPassword().isBlank()) {
+            if (updates.getCurrentPassword() == null || !passwordEncoder.matches(updates.getCurrentPassword(), existing.getPassword())) {
+                throw new RuntimeException("Current password provided is incorrect.");
+            }
             existing.setPassword(passwordEncoder.encode(updates.getPassword()));
         }
         if (updates.getPhone() != null) {
@@ -128,6 +136,7 @@ public class UserService {
         return userRepository.save(Objects.requireNonNull(existing));
     }
 
+    // Approves an organizer and sends them an in-app notification
     public User approveOrganizer(Long id) {
         if (id == null) throw new RuntimeException("ID must not be null");
         User user = userRepository.findById(Objects.requireNonNull(id))
@@ -137,23 +146,18 @@ public class UserService {
         }
         user.setOrganizerStatus("APPROVED");
         User saved = userRepository.save(user);
-        
-        // notify
-        notificationService.createNotification(user.getId(), 
-            "Your organizer application has been approved! You can now create events.", 
+        notificationService.createNotification(user.getId(),
+            "Your organizer application has been approved! You can now create events.",
             "APPROVAL");
-            
         return saved;
     }
 
+    // Deletes user along with their bookings and events before removing the account
     @org.springframework.transaction.annotation.Transactional
     public void deleteUser(Long id) {
         if (id == null) return;
-        
         bookingRepository.deleteByUserId(id);
-        
         eventRepository.deleteByOrganizerId(id);
-        
         userRepository.deleteById(Objects.requireNonNull(id));
     }
 }

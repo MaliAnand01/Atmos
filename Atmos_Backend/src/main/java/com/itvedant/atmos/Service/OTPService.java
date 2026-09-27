@@ -2,20 +2,21 @@ package com.itvedant.atmos.Service;
 
 import com.itvedant.atmos.Entity.User;
 import com.itvedant.atmos.Repo.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Random;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class OTPService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private EmailService emailService;
+    private final EmailService emailService;
 
     public void generateAndSendOTP(User user) {
         String otp = String.format("%06d", new Random().nextInt(999999));

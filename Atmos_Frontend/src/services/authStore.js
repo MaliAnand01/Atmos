@@ -1,6 +1,5 @@
-// LocalStorage Auth State Manager
+// Manages auth session in localStorage (token + user object)
 
-/** Save user session */
 export const saveAuth = (user) => {
   localStorage.setItem('atmos_user', JSON.stringify(user));
 };

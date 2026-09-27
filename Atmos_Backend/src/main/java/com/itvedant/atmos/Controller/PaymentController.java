@@ -3,69 +3,94 @@ package com.itvedant.atmos.Controller;
 import com.itvedant.atmos.Entity.Booking;
 import com.itvedant.atmos.Repo.BookingRepository;
 import com.itvedant.atmos.Service.NotificationService;
+import com.itvedant.atmos.Service.RazorpayService;
+import com.itvedant.atmos.Service.EmailService;
+import com.razorpay.Order;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.UUID;
 
-// mock payment gateway
+import org.springframework.beans.factory.annotation.Value;
+
+import lombok.RequiredArgsConstructor;
+
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/payments")
 public class PaymentController {
 
+    @Value("${RAZORPAY_KEY_ID}")
+    private String keyId;
+
     private final BookingRepository bookingRepository;
     private final NotificationService notificationService;
+    private final RazorpayService razorpayService;
+    private final EmailService emailService;
 
-    public PaymentController(BookingRepository bookingRepository, 
-                             NotificationService notificationService) {
-        this.bookingRepository = bookingRepository;
-        this.notificationService = notificationService;
+    // Creates a Razorpay order for the given booking and returns payment details to the frontend
+    @PostMapping("/create-order/{bookingId}")
+    public ResponseEntity<?> createOrder(@PathVariable Long bookingId) {
+        if (bookingId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Booking ID is required"));
+        }
+        try {
+            Booking booking = bookingRepository.findById(bookingId)
+                    .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+            double amount = booking.getEvent().getPrice() * booking.getQuantity();
+            String currency = "INR";
+            String receipt = "receipt_booking_" + bookingId;
+
+            Order order = razorpayService.createOrder(amount, currency, receipt);
+
+            booking.setRazorpayOrderId(order.get("id").toString());
+            bookingRepository.save(booking);
+
+            return ResponseEntity.ok(Map.of(
+                "orderId", order.get("id").toString(),
+                "amount", order.get("amount").toString(),
+                "currency", order.get("currency").toString(),
+                "keyId", keyId
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
     }
 
-    // process payment
-    @PostMapping("/atmos-pay")
-    public ResponseEntity<?> processAtmosPay(@RequestBody Map<String, Object> data) {
-        try {
-            Long bookingId = Long.parseLong(data.get("bookingId").toString());
-            String cardNumber = data.get("cardNumber").toString();
-            
-            Booking booking = bookingRepository.findById(bookingId)
-                    .orElseThrow(() -> new RuntimeException("Booking not found for ID: " + bookingId));
+    // Verifies the Razorpay signature and marks the booking as ACTIVE on success
+    @PostMapping("/verify-payment")
+    public ResponseEntity<?> verifyPayment(@RequestBody Map<String, String> data) {
+        String orderId = data.get("razorpay_order_id");
+        String paymentId = data.get("razorpay_payment_id");
+        String signature = data.get("razorpay_signature");
 
-            // accept 4242 test cards
-            if (cardNumber != null && cardNumber.replace(" ", "").startsWith("4242")) {
-                
-                // set active
-                booking.setPaymentStatus("SUCCESS");
-                booking.setStatus("ACTIVE");
-                booking.setRazorpayPaymentId("ATMOS_TXN_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-                booking.setBookingHash(UUID.randomUUID().toString());
-                bookingRepository.save(booking);
+        boolean isValid = razorpayService.verifySignature(orderId, paymentId, signature);
 
-                // notify user
-                notificationService.createNotification(booking.getUser().getId(), 
-                    "Payment Successful! Your ticket to " + booking.getEvent().getTitle() + " is confirmed.", 
-                    "BOOKING");
+        if (isValid) {
+            Booking booking = bookingRepository.findByRazorpayOrderId(orderId)
+                    .orElseThrow(() -> new RuntimeException("Booking not found for order: " + orderId));
 
-                // notify org
-                notificationService.createNotification(booking.getEvent().getOrganizerId(),
-                    "New Booking! " + booking.getUser().getUsername() + " booked a ticket for " + booking.getEvent().getTitle(),
-                    "ORGANIZER_NOTIFICATION");
+            booking.setPaymentStatus("SUCCESS");
+            booking.setStatus("ACTIVE");
+            booking.setRazorpayPaymentId(paymentId);
+            booking.setBookingHash(UUID.randomUUID().toString());
+            bookingRepository.save(booking);
 
-                return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "transactionId", booking.getRazorpayPaymentId(),
-                    "message", "Payment processed successfully."
-                ));
-            } else {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "status", "failed",
-                    "message", "Invalid card. Please use a valid test card."
-                ));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", "System error: " + e.getMessage()));
+            notificationService.createNotification(booking.getUser().getId(),
+                "Payment Successful! Your ticket to " + booking.getEvent().getTitle() + " is confirmed.",
+                "BOOKING");
+
+            notificationService.createNotification(booking.getEvent().getOrganizerId(),
+                "New Booking! " + booking.getUser().getUsername() + " booked a ticket for " + booking.getEvent().getTitle(),
+                "ORGANIZER_NOTIFICATION");
+
+            emailService.sendBookingConfirmationEmail(booking.getUser().getEmail(), booking);
+
+            return ResponseEntity.ok(Map.of("status", "success", "message", "Payment verified."));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("status", "failed", "message", "Invalid signature."));
         }
     }
 }

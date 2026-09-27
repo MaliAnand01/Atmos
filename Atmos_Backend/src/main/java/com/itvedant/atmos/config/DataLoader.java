@@ -42,8 +42,8 @@ public class DataLoader {
                 admin.setVerified(true);
 
                 User testUser = new User();
-                testUser.setUsername("Anand Mali");
-                testUser.setEmail("malianand0721@gmail.com");
+                testUser.setUsername("Test User");
+                testUser.setEmail("testuser@gmail.com");
                 testUser.setPassword(passwordEncoder.encode("password123"));
                 testUser.setRole("ROLE_USER");
                 testUser.setVerified(true);
@@ -249,4 +249,4 @@ public class DataLoader {
         e.setTourName(tour);
         return e;
     }
-}
+}

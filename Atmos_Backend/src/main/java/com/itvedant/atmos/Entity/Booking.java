@@ -1,14 +1,18 @@
 package com.itvedant.atmos.Entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "bookings")
-@Data
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Booking {
@@ -25,12 +29,19 @@ public class Booking {
     private Event event;
 
     @Column(nullable = false)
-    private String status; // "ACTIVE", "CANCELLED", "PENDING_PAYMENT"
+    private String status; 
 
+    @Builder.Default
     @Column(name = "booking_time", nullable = false)
     private LocalDateTime bookingTime = LocalDateTime.now();
 
-    private String paymentStatus = "PENDING"; // PENDING, SUCCESS, FAILED
+    @Builder.Default
+    private String paymentStatus = "PENDING";
+    private String razorpayOrderId;
     private String razorpayPaymentId;
-    private String bookingHash; // for QR code security
+    private String bookingHash; 
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer quantity = 1;
 }

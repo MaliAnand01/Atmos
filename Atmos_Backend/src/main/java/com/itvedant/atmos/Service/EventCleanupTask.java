@@ -2,7 +2,7 @@ package com.itvedant.atmos.Service;
 
 import com.itvedant.atmos.Entity.Event;
 import com.itvedant.atmos.Repo.EventRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
@@ -11,13 +11,15 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class EventCleanupTask {
 
     private static final Logger logger = LoggerFactory.getLogger(EventCleanupTask.class);
 
-    @Autowired
-    private EventRepository eventRepository;
+    private final EventRepository eventRepository;
 
     // Run every hour
     @Scheduled(cron = "0 0 * * * *")

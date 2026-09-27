@@ -9,8 +9,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
+
 // hero stats
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/stats")
 public class StatsController {
 
@@ -19,15 +22,7 @@ public class StatsController {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
 
-    public StatsController(EventRepository eventRepository,
-                           VenueRepository venueRepository,
-                           UserRepository userRepository,
-                           BookingRepository bookingRepository) {
-        this.eventRepository = eventRepository;
-        this.venueRepository = venueRepository;
-        this.userRepository = userRepository;
-        this.bookingRepository = bookingRepository;
-    }
+
 
     @GetMapping
     public ResponseEntity<?> getStats() {
